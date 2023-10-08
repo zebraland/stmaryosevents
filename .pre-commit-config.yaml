@@ -72,4 +72,4 @@ repos:
         types: [python]
         entry: env PYTHONPATH=./ pylint
         stages: [push]
-        additional_dependencies: ['filelock', 'paramiko', 'requests', 'PyYAML']
+        additional_dependencies: ['requests']
