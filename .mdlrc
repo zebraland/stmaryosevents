@@ -1,0 +1,1 @@
+style File.expand_path('.mdl_style.rb', __dir__)
