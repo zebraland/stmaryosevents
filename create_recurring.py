@@ -251,6 +251,7 @@ def create_sundays(api_url=None, headers=None, startdate=None, weekcount=52, dry
             endtime="11:15:00",
             tags=["communion"],
             categories=["communion"],
+            image=963,
         )
 
         create_wordpress_event(data, api_url=api_url, headers=headers, dryrun=dryrun)
@@ -276,23 +277,40 @@ def create_sundays(api_url=None, headers=None, startdate=None, weekcount=52, dry
             endtime="19:45:00",
             tags=tags,
             categories=categories,
+            image=963,
         )
         create_wordpress_event(data, api_url=api_url, headers=headers, dryrun=dryrun)
 
         # on the first Sunday of the month, unless it is August
         if (date_info["week_num"] in {1}) and (int(date_info["monthnum"]) not in summer):
-            desc = "<p>A family service with arts and craft activities.</p>"
+            desc = (
+                "<h1>4 O&#8217;clock Church</h1>"
+                '<p><img decoding="async" class="aligncenter wp-image-957 size-full" '
+                'src="/wp-content/uploads/2026/01/4oclock-e1768496522387.jpg" alt="" width="1067" height="1453" '
+                'srcset="/wp-content/uploads/2026/01/4oclock-e1768496522387.jpg 1067w, '
+                "/wp-content/uploads/2026/01/4oclock-e1768496522387-220x300.jpg 220w, "
+                "/wp-content/uploads/2026/01/4oclock-e1768496522387-752x1024.jpg 752w, "
+                "/wp-content/uploads/2026/01/4oclock-e1768496522387-768x1046.jpg 768w, "
+                "/wp-content/uploads/2026/01/4oclock-e1768496522387-1024x1394.jpg 1024w, "
+                '/wp-content/uploads/2026/01/4oclock-e1768496522387-793x1080.jpg 793w" sizes="(max-width: 1067px) '
+                '100vw, 1067px" /></p>'
+                "<p>Our 4 O&#8217;clock Church is one of our family focused groups that takes place on the first "
+                "Sunday of the month during school term time. Its lots of fun an features a mix of different themes "
+                "with crafts and activities as well as some lovely food and drink!</p>"
+            )
+            excerpt = "<p>4 O'Clock Church is a family service with different themes, crafts and activities.</p>"
 
             data = format_event(
                 title="4 O'clock Church - Family Service (afternoon)",
                 description=desc,
-                excerpt=desc,
+                excerpt=excerpt,
                 date=date,
                 date_info=date_info,
                 starttime="16:00:00",
                 endtime="17:00:00",
                 tags=["family", "4oclock"],
                 categories=["family"],
+                image=965,
             )
             create_wordpress_event(data, api_url=api_url, headers=headers, dryrun=dryrun)
         time.sleep(delay)
@@ -358,7 +376,7 @@ def create_choir(api_url=None, headers=None, startdate=None, weekcount=52, dryru
                     endtime=info["end"],
                     tags=["choirrehearsal"],
                     categories=["choirrehearsal"],
-                    image=870,
+                    image=962,
                 )
                 create_wordpress_event(data, api_url=api_url, headers=headers, dryrun=dryrun)
 
