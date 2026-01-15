@@ -10,6 +10,7 @@ import argparse
 import base64
 import calendar
 import datetime
+import json
 import os
 import sys
 import time
@@ -31,37 +32,35 @@ WORDPRESS_SERVER = os.getenv("WORDPRESS_SERVER")
 daymap = {"01": "st", "21": "st", "31": "st", "02": "nd", "22": "nd", "03": "rd", "23": "rd"}  # codespell:ignore nd
 summer = {8}
 
-catmap = {"service": 25, "communion": 26, "evensong": 27, "family": 28, "choirrehearsal": 30, "choralevensong": 31}
-tagmap = {
-    "worship": 14,
-    "service": 16,
-    "morning": 17,
-    "evening": 18,
-    "afternoon": 19,
-    "communion": 20,
-    "evensong": 21,
-    "family": 22,
-    "choirrehearsal": 29,
-    "choralevensong": 32,
-}
-orgmap = {"stmarys": 278}
-venuemap = {"church": 282, "churchhall": 289}
+catmap = json.loads(os.getenv("CATMAP"))
+tagmap = json.loads(os.getenv("TAGMAP"))
+orgmap = json.loads(os.getenv("ORGMAP"))
+venuemap = json.loads(os.getenv("VENUEMAP"))
 
 
 def read_wordpress_events(api_url=WORDPRESS_SERVER):
-    """Read the current events from wordpress."""
+    """Read the current events from wordpress.
+
+    api_url (str): The URL for the wordpress event API
+    """
     response = requests.get(api_url, timeout=10)
     response_json = response.json()
     print(response_json)
 
 
-def create_wordpress_event(data, api_url=None, headers=None, docreate=False):
-    """Create a workpress event."""
+def create_wordpress_event(data, api_url=None, headers=None, dryrun=False):
+    """Create a wordpress event.
+
+    data (json): The Payload formatted data for the event
+    api_url (str): The URL for the wordpress event API
+    headers (dict): Requests object additional headers to send
+    dryrun (bool): Dry run create or not
+    """
     if api_url is None:
         api_url = WORDPRESS_SERVER
     if headers is None:
         headers = wordpress_header
-    if docreate:
+    if dryrun:
         response = requests.post(url=api_url, data=data, headers=headers, timeout=10)
         response_json = response.json()
         print(response_json)
@@ -70,190 +69,299 @@ def create_wordpress_event(data, api_url=None, headers=None, docreate=False):
         print(data)
 
 
-def create_sundays(api_url=None, headers=None, startdate=None, weekcount=52, docreate=False, delay=1):
-    """Create Sunday recurring events."""
+def get_next_week_by_day(startdate, day):
+    """Get the date of the next week by day.
+
+    startdate (str): ISO formatted date to start lookging for the next instance of day
+    day (str): The index of the day number (e.g. Sunday = 6)
+    """
+    if startdate is None:
+        nextweekdate = pendulum.now().next(day).strftime("%Y-%m-%d")
+    else:
+        nextweekdate = pendulum.parse(startdate).next(day).strftime("%Y-%m-%d")
+    return nextweekdate
+
+
+def get_dates_for_n_weeks(startdate, weekcount):
+    """Get the date of the day for the next N weeks.
+
+    startdate (str): ISO formatted date to start lookging for the next instance of day
+    weekcount (int): The number of weeks to look forward to
+    """
+    # start with the first date
+    dates = [startdate]
+    for i in range(1, weekcount):
+        dates.append(
+            (datetime.datetime.strptime(startdate, "%Y-%m-%d") + datetime.timedelta(days=7 * i)).strftime("%Y-%m-%d")
+        )
+    return dates
+
+
+def decode_date(date):
+    """Decode the date string to something nicer.
+
+    date (str): ISO formatted date string
+    """
+    date_info = {
+        "daystr": datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%A"),
+        "datenum": datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%d"),
+        "monthstr": datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%B"),
+        "monthnum": datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%m"),
+        "yearstr": datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%Y"),
+    }
+
+    # look up e.g. 1"st" or 2"nd", default to 20"th"  # codespell:ignore nd
+    date_info["suffixstr"] = daymap.get(date_info["datenum"], "th")
+    # lookup the week number for the current date, i.e. first in the month
+    date_info["week_num"] = find_date_week(date=date)
+    return date_info
+
+
+def find_date_week(date):
+    """Find the week number a date is in.
+
+    date(str): ISO formatted date string
+    """
+    # get the list of weeks which for the month
+    weeks = calendar.monthcalendar(
+        int(datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%Y")),
+        int(datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%m")),
+    )
+
+    date_num = int(datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%d"))
+    # lookup the day index from the day name for the week
+    day_idx = list(calendar.day_name).index(datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%A"))
+
+    # loop over the weeks and if the date is in the index for the day of the week, we know the week number
+    for index, week in enumerate(weeks):
+        if week[day_idx] == date_num:
+            return index + 1
+
+    return None
+
+
+def format_title(date_info, title):
+    """Format the title of an event.
+
+    date_info (dict): Dict from decode_date with information about the date
+    title (str): The title text to include
+    """
+    return (
+        f"{title} "
+        f"[{date_info['daystr']} {date_info['datenum'].lstrip('0')}{date_info['suffixstr']} "
+        f"{date_info['monthstr']} {date_info['yearstr']}]"
+    )
+
+
+def format_event(
+    title,
+    description,
+    excerpt,
+    date,
+    date_info,
+    starttime,
+    endtime,
+    tags=None,
+    categories=None,
+    venue=None,
+    organiser=None,
+    image=None,
+):
+    """Format an event for wordpress events calendar.
+
+    title (str): The title for the event
+    description (str): HTML formatted string for the description
+    excerpt (str): HTML formatted string for the except - usually a shorter version of description
+    date (str): ISO formatted date for event
+    date_info (dict): Representation of the date
+    starttime (str): Start time of the event of format HH:MM:SS
+    endtime (str): End time of the event of format HH:MM:SS
+    tags (list): tags to apply to event in string format
+    categories (list): categories to apply to event in string format
+    venue (str): Index from venuemap of the venue
+    organiser (str): Index from orgmap of the organiser
+    image (int): The featured image reference id
+    """
+    if not tags:
+        tags = []
+    if not categories:
+        categories = []
+    if not venue:
+        venue = venuemap["church"]
+    if not organiser:
+        organiser = orgmap["stmarys"]
+
+    data = {
+        "title": format_title(date_info=date_info, title=title),
+        "description": description,
+        "excerpt": excerpt,
+        "start_date": f"{date} {starttime}",
+        "end_date": f"{date} {endtime}",
+        "venue": venue,
+        "organizer": organiser,
+        "status": "publish",
+        "show_map": True,
+        "show_map_link": True,
+        "tags": [],
+        "categories": [],
+    }
+
+    for tag in tags:
+        data["tags"].append(tagmap[tag])
+
+    for cat in categories:
+        data["categories"].append(catmap[cat])
+
+    if image:
+        data["image"] = image
+
+    return data
+
+
+def create_sundays(api_url=None, headers=None, startdate=None, weekcount=52, dryrun=False, delay=1):
+    """Create Sunday recurring events.
+
+    api_url (str): The URL for the wordpress event API
+    headers (dict): Requests object additional headers to send
+    startdate (str): ISO formatted date to start from
+    weekcount (int): The number of weeks to work forward through
+    dryrun (bool): Dry run create or not
+    delay (int): Seconds to pause between each day to process to help prevent server overload
+    """
+    sunday = calendar.SUNDAY
     if api_url is None:
         api_url = WORDPRESS_SERVER
     if headers is None:
         headers = wordpress_header
-    if startdate is None:
-        nextweekdate = pendulum.now().next(pendulum.SUNDAY).strftime("%Y-%m-%d")
-    else:
-        nextweekdate = pendulum.parse(startdate).next(pendulum.SUNDAY).strftime("%Y-%m-%d")
-    weekdates = [nextweekdate]
+    nextweekdate = get_next_week_by_day(startdate=startdate, day=sunday)
+    dates_for_day = get_dates_for_n_weeks(startdate=nextweekdate, weekcount=weekcount)
 
-    for i in range(1, weekcount):
-        weekdates.append(
-            (datetime.datetime.strptime(nextweekdate, "%Y-%m-%d") + datetime.timedelta(days=7 * i)).strftime("%Y-%m-%d")
+    for date in dates_for_day:
+        date_info = decode_date(date=date)
+
+        desc = f"<p>{date_info['daystr']} morning Holy Communion Service</p>"
+
+        data = format_event(
+            title="Holy Communion from the Book of Common Worship (morning)",
+            description=desc,
+            excerpt=desc,
+            date=date,
+            date_info=date_info,
+            starttime="10:00:00",
+            endtime="11:15:00",
+            tags=["communion"],
+            categories=["communion"],
         )
 
-    for day in weekdates:
-        daystr = datetime.datetime.strptime(day, "%Y-%m-%d").strftime("%A")
-        datenum = datetime.datetime.strptime(day, "%Y-%m-%d").strftime("%d")
-        suffixstr = daymap.get(datenum, "th")
-        datestr = int(datenum)
-        monthstr = datetime.datetime.strptime(day, "%Y-%m-%d").strftime("%B")
-        monthnum = datetime.datetime.strptime(day, "%Y-%m-%d").strftime("%m")
-        yearstr = datetime.datetime.strptime(day, "%Y-%m-%d").strftime("%Y")
-        cal = calendar.monthcalendar(int(yearstr), int(monthnum))
-        first_week = cal[0]
-        second_week = cal[1]
-        third_week = cal[2]
-
-        if first_week[calendar.SUNDAY]:
-            second_day_month = second_week[calendar.SUNDAY]
-        else:
-            second_day_month = third_week[calendar.SUNDAY]
-
-        if first_week[calendar.SUNDAY]:
-            first_day_month = first_week[calendar.SUNDAY]
-        else:
-            first_day_month = second_week[calendar.SUNDAY]
-
-        data = {
-            "title": f"{daystr} {datestr}{suffixstr} {monthstr} {yearstr}: Holy Communion from the Book of Common \
-                      Worship (morning)",
-            "description": f"<p>{daystr} morning Holy Communion Service</p>",
-            "excerpt": f"<p>{daystr} morning Holy Communion Service</p>",
-            "start_date": f"{day} 10:00:00",
-            "end_date": f"{day} 11:15:00",
-            "venue": venuemap["church"],
-            "organizer": orgmap["stmarys"],
-            "status": "publish",
-            "show_map": True,
-            "show_map_link": True,
-            "tags": [tagmap["communion"]],
-            "categories": [catmap["communion"]],
-        }
-        create_wordpress_event(data, api_url=api_url, headers=headers, docreate=docreate)
+        create_wordpress_event(data, api_url=api_url, headers=headers, dryrun=dryrun)
 
         service = "Evensong"
-        tags = [tagmap["evensong"]]
-        categories = [catmap["evensong"]]
+        tags = ["evensong"]
+        categories = ["evensong"]
         # second Sunday of the month unless it is August
-        if int(second_day_month) == int(datenum) and int(monthnum) not in summer:
+        if (date_info["week_num"] in {2}) and (int(date_info["monthnum"]) not in summer):
             service = "Choral Evensong"
-            tags = [tagmap["choralevensong"]]
-            categories = [catmap["choralevensong"]]
+            tags = ["choralevensong"]
+            categories = ["choralevensong"]
 
-        data = {
-            "title": f"{daystr} {datestr}{suffixstr} {monthstr} {yearstr}: A service of {service} (evening)",
-            "description": f"<p>{daystr} Evening service of {service}</p>",
-            "excerpt": f"<p>{daystr} Evening service of {service}</p>",
-            "start_date": f"{day} 18:30:00",
-            "end_date": f"{day} 19:45:00",
-            "venue": venuemap["church"],
-            "organizer": orgmap["stmarys"],
-            "status": "publish",
-            "show_map": True,
-            "show_map_link": True,
-            "tags": tags,
-            "categories": categories,
-        }
-        create_wordpress_event(data, api_url=api_url, headers=headers, docreate=docreate)
+        desc = f"<p>{date_info['daystr']} Evening service of {service}</p>"
+
+        data = format_event(
+            title=f"A service of {service} (evening)",
+            description=desc,
+            excerpt=desc,
+            date=date,
+            date_info=date_info,
+            starttime="18:30:00",
+            endtime="19:45:00",
+            tags=tags,
+            categories=categories,
+        )
+        create_wordpress_event(data, api_url=api_url, headers=headers, dryrun=dryrun)
 
         # on the first Sunday of the month, unless it is August
-        if int(first_day_month) == int(datenum) and int(monthnum) not in summer:
-            data = {
-                "title": f"{daystr} {datestr}{suffixstr} {monthstr} {yearstr}: 4 O'clock Church - Family Service \
-                           (afternoon)",
-                "description": "<p>A family service with arts and craft activities.</p>",
-                "excerpt": "<p>A family service with arts and craft activities.</p>",
-                "start_date": f"{day} 16:00:00",
-                "end_date": f"{day} 17:00:00",
-                "venue": venuemap["church"],
-                "organizer": orgmap["stmarys"],
-                "status": "publish",
-                "show_map": True,
-                "show_map_link": True,
-                "tags": [tagmap["family"]],
-                "categories": [catmap["family"]],
-            }
-            create_wordpress_event(data, api_url=api_url, headers=headers, docreate=docreate)
+        if (date_info["week_num"] in {1}) and (int(date_info["monthnum"]) not in summer):
+            desc = "<p>A family service with arts and craft activities.</p>"
+
+            data = format_event(
+                title="4 O'clock Church - Family Service (afternoon)",
+                description=desc,
+                excerpt=desc,
+                date=date,
+                date_info=date_info,
+                starttime="16:00:00",
+                endtime="17:00:00",
+                tags=["family", "4oclock"],
+                categories=["family"],
+            )
+            create_wordpress_event(data, api_url=api_url, headers=headers, dryrun=dryrun)
         time.sleep(delay)
 
 
-def create_choir(api_url=None, headers=None, startdate=None, weekcount=52, docreate=False, delay=1):
-    """Create Choir rehearsal events."""
+def create_choir(api_url=None, headers=None, startdate=None, weekcount=52, dryrun=False, delay=1):
+    """Create Choir rehearsal events.
+
+    api_url (str): The URL for the wordpress event API
+    headers (dict): Requests object additional headers to send
+    startdate (str): ISO formatted date to start from
+    weekcount (int): The number of weeks to work forward through
+    dryrun (bool): Dry run create or not
+    delay (int): Seconds to pause between each day to process to help prevent server overload
+    """
+    friday = calendar.FRIDAY
     if api_url is None:
         api_url = WORDPRESS_SERVER
     if headers is None:
         headers = wordpress_header
-    if startdate is None:
-        nextweekdate = pendulum.now().next(pendulum.FRIDAY).strftime("%Y-%m-%d")
-    else:
-        nextweekdate = pendulum.parse(startdate).next(pendulum.FRIDAY).strftime("%Y-%m-%d")
-    weekdates = [nextweekdate]
+    nextweekdate = get_next_week_by_day(startdate=startdate, day=friday)
+    dates_for_day = get_dates_for_n_weeks(startdate=nextweekdate, weekcount=weekcount)
 
-    for i in range(1, weekcount):
-        weekdates.append(
-            (datetime.datetime.strptime(nextweekdate, "%Y-%m-%d") + datetime.timedelta(days=7 * i)).strftime("%Y-%m-%d")
-        )
+    choir = {
+        "junior": {
+            "title": "Junior",
+            "start": "19:00:00",
+            "end": "20:30:00",
+            "enabled": False,
+        },
+        "adult": {
+            "title": "Adult",
+            "start": "19:30:00",
+            "end": "21:00:00",
+            "enabled": True,
+        },
+    }
 
-    for day in weekdates:
-        daystr = datetime.datetime.strptime(day, "%Y-%m-%d").strftime("%A")
-        datenum = datetime.datetime.strptime(day, "%Y-%m-%d").strftime("%d")
-        suffixstr = daymap.get(datenum, "th")
-        datestr = int(datenum)
-        monthstr = datetime.datetime.strptime(day, "%Y-%m-%d").strftime("%B")
-        monthnum = datetime.datetime.strptime(day, "%Y-%m-%d").strftime("%m")
-        yearstr = datetime.datetime.strptime(day, "%Y-%m-%d").strftime("%Y")
-        # cal = calendar.monthcalendar(int(yearstr), int(monthnum))
-        # first_week = cal[0]
-        # second_week = cal[1]
-        # third_week = cal[2]
-
-        # if first_week[calendar.FRIDAY]:
-        #     second_day_month = second_week[calendar.FRIDAY]
-        # else:
-        #     second_day_month = third_week[calendar.FRIDAY]
-
-        # if first_week[calendar.FRIDAY]:
-        #     first_day_month = first_week[calendar.FRIDAY]
-        # else:
-        #     first_day_month = second_week[calendar.FRIDAY]
+    for date in dates_for_day:
+        date_info = decode_date(date=date)
 
         # choir is not in August
-        if int(monthnum) not in summer:
-            data = {
-                "title": f"{daystr} {datestr}{suffixstr} {monthstr} {yearstr}: Junior Choir Rehearsal",
-                "description": f"<p>{daystr} Junior Choir Rehearsal</p>\
-                                    <p>Our choir normally rehearses on a Friday evening, the Junior Choir start \
-                                    rehearsal earlier than the Adult choir and are joined by the Adult Choir.</p>\
-                                    <p>Music plays an important part in the life of St Mary's Church, information \
-                                    on <a href='/music-at-st-marys/'>joining the choir</a> is available.</p>",
-                "excerpt": f"<p>{daystr} Junior Choir Rehearsal</p>",
-                "start_date": f"{day} 19:00:00",
-                "end_date": f"{day} 20:30:00",
-                "venue": venuemap["church"],
-                "organizer": orgmap["stmarys"],
-                "status": "publish",
-                "show_map": True,
-                "show_map_link": True,
-                "tags": [tagmap["choirrehearsal"]],
-                "categories": [catmap["choirrehearsal"]],
-            }
-            create_wordpress_event(data, api_url=api_url, headers=headers, docreate=docreate)
+        if int(date_info["monthnum"]) not in summer:
+            for _choir, info in choir.items():
+                if not info["enabled"]:
+                    continue
+                desc = (
+                    (
+                        f"<h1>{info['title']} Choir Rehearsal</h1>"
+                        "<p>Our choir normally rehearses on a Friday evening, the Junior Choir start "
+                        "rehearsal earlier than the Adult choir and are joined by the Adult Choir.</p>"
+                        "<p>Music plays an important part in the life of St Mary's Church, information "
+                        "on <a href='/music-at-st-marys/'>joining the choir</a> is available.</p>"
+                    ),
+                )
+                data = format_event(
+                    title=f"{info['title']} Choir Rehearsal",
+                    description=desc,
+                    excerpt=f"{info['title']} Choir Rehearsal",
+                    date=date,
+                    date_info=date_info,
+                    starttime=info["start"],
+                    endtime=info["end"],
+                    tags=["choirrehearsal"],
+                    categories=["choirrehearsal"],
+                    image=870,
+                )
+                create_wordpress_event(data, api_url=api_url, headers=headers, dryrun=dryrun)
 
-            data = {
-                "title": f"{daystr} {datestr}{suffixstr} {monthstr} {yearstr}: Adult Choir Rehearsal",
-                "description": f"<p>{daystr} Adult Choir Rehearsal</p>\
-                                    <p>Our choir normally rehearses on a Friday evening, the Junior Choir start \
-                                    rehearsal earlier than the Adult choir and are joined by the Adult Choir.</p>\
-                                    <p>Music plays an important part in the life of St Mary's Church, information \
-                                    on <a href='/music-at-st-marys/'>joining the choir</a> is available.</p>",
-                "excerpt": f"<p>{daystr} Adult Choir Rehearsal</p>",
-                "start_date": f"{day} 19:30:00",
-                "end_date": f"{day} 21:00:00",
-                "venue": venuemap["church"],
-                "organizer": orgmap["stmarys"],
-                "status": "publish",
-                "show_map": True,
-                "show_map_link": True,
-                "tags": [tagmap["choirrehearsal"]],
-                "categories": [catmap["choirrehearsal"]],
-            }
-            create_wordpress_event(data, api_url=api_url, headers=headers, docreate=docreate)
         time.sleep(delay)
 
 
@@ -263,8 +371,9 @@ def main():
     parser.add_argument("--sunday", help="Create Sunday worship", action="store_true")
     # parser.add_argument('--thursday', help='Create Thursday events', action='store_true')
     parser.add_argument("--thursday", help=argparse.SUPPRESS, action="store_true")
+    parser.add_argument("--friday", help=argparse.SUPPRESS, action="store_true")
     parser.add_argument("--choir", help="Create choir rehearsals", action="store_true")
-    parser.add_argument("--debug", help="Do not create the actual event", action="store_false")
+    parser.add_argument("--dryrun", help="Do not create the actual event", action="store_false")
     parser.add_argument(
         "--weeks", help="Number of weeks to create", type=int, metavar="{1-52}", choices=range(1, 53), default=12
     )
@@ -280,7 +389,7 @@ def main():
             headers=wordpress_header,
             startdate=args.startdate,
             weekcount=args.weeks,
-            docreate=args.debug,
+            dryrun=args.dryrun,
         )
     if args.friday:
         create_choir(
@@ -288,9 +397,9 @@ def main():
             headers=wordpress_header,
             startdate=args.startdate,
             weekcount=args.weeks,
-            docreate=args.debug,
+            dryrun=args.dryrun,
         )
-    # read_wordpress_posts()
+    # read_wordpress_events()
 
 
 if __name__ == "__main__":
