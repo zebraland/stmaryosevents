@@ -1,8 +1,77 @@
-[tool.black]
-line-length = 120
-target-version = ["py39", "py310"]
+[project]
+name = "stmaryosevents"
+description = "A tool to help push events to the stmaryos.org.uk site"
+readme = "README.md"
+version = "2026-01.1"
+authors = [
+  {email = "simon@sthompson.org.uk", name = "Simon Thompson"},
+]
 
-[tool.isort]
-py_version = 39
-extend_skip_glob = ['.git/*', '.cache/*', '__pycache__/*', 'venv/*']
-profile = 'black'
+requires-python = ">= 3.11"
+
+[project.optional-dependencies]
+lint = [
+  'ruff >= 0.12.2',
+]
+
+[tool.ruff]
+line-length = 120
+indent-width = 4
+
+target-version = "py311"
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+# Enable auto-formatting of code examples in docstrings. Markdown,
+# reStructuredText code/literal blocks and doctests are all supported.
+#
+# This is currently disabled by default, but it is planned for this
+# to be opt-out in the future.
+docstring-code-format = false
+
+# Set the line length limit used when formatting code snippets in
+# docstrings.
+#
+# This only has an effect when the `docstring-code-format` setting is
+# enabled.
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint]
+# turn on unstable rules (like CPY)
+preview = true
+# B = flake8-bugbear
+# Q = flake8-quotes
+# I = isort (in black mode)
+# D = docstr
+# CPY = flake8-copyright
+# PL = pylint
+# NPY = numpy
+# T20 = no print
+# UP = upgrade Python styles
+extend-select = ["B", "Q", "I", "D", "CPY", "PL", "NPY", "T20", "UP"]
+# UP009 = no utf
+# UP015 = open mode
+# PLR0911 = return statements
+extend-ignore = ["UP009", "UP015", "PLR0911", "PLR1702", "PLR0912", "PLR0913", "PLR0914", "PLR0915", "PLR0917", "T201", "UP022"]
+
+[tool.ruff.lint.pylint]
+max-statements = 80
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"  # Accepts: "google", "numpy", or "pep257".
+
+[tool.licensecheck]
+using = "PEP631:lint"
+fail_licenses = ["GPL"]
+zero = true

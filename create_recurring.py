@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
+# Copyright (c) 2026 Simon Thompson
 """Create "recurring" events for a wordpess site with events plugin added.
 
 Events that are created a not recurring (which requires paid plugin), but
 will create multiple instances of the event.
 """
-
-# pylint: disable=too-many-arguments
-# pylint: disable=too-many-locals
 
 import argparse
 import base64
@@ -27,7 +25,8 @@ wordpress_header = {"Authorization": "Basic " + wordpress_token.decode("utf-8")}
 WORDPRESS_SERVER = "https://stmaryos.sthompson.org.uk/wp-json/tribe/events/v1/events"
 # WORDPRESS_SERVER = "https://stmaryos.sthompson.org.uk/wp-json/wp/v2/tribe_events"
 
-daymap = {"01": "st", "21": "st", "31": "st", "02": "nd", "22": "nd", "03": "rd", "23": "rd"}
+daymap = {"01": "st", "21": "st", "31": "st", "02": "nd", "22": "nd", "03": "rd", "23": "rd"}  # codespell:ignore nd
+summer = {8}
 
 catmap = {"service": 25, "communion": 26, "evensong": 27, "family": 28, "choirrehearsal": 30, "choralevensong": 31}
 tagmap = {
@@ -129,7 +128,7 @@ def create_sundays(api_url=None, headers=None, startdate=None, weekcount=52, doc
         tags = [tagmap["evensong"]]
         categories = [catmap["evensong"]]
         # second Sunday of the month unless it is August
-        if int(second_day_month) == int(datenum) and int(monthnum) not in [8]:
+        if int(second_day_month) == int(datenum) and int(monthnum) not in summer:
             service = "Choral Evensong"
             tags = [tagmap["choralevensong"]]
             categories = [catmap["choralevensong"]]
@@ -151,12 +150,12 @@ def create_sundays(api_url=None, headers=None, startdate=None, weekcount=52, doc
         create_wordpress_event(data, api_url=api_url, headers=headers, docreate=docreate)
 
         # on the first Sunday of the month, unless it is August
-        if int(first_day_month) == int(datenum) and int(monthnum) not in [8]:
+        if int(first_day_month) == int(datenum) and int(monthnum) not in summer:
             data = {
                 "title": f"{daystr} {datestr}{suffixstr} {monthstr} {yearstr}: 4 O'clock Church - Family Service \
                            (afternoon)",
-                "description": "<p>A family service with arts and craft activties.</p>",
-                "excerpt": "<p>A family service with arts and craft activties.</p>",
+                "description": "<p>A family service with arts and craft activities.</p>",
+                "excerpt": "<p>A family service with arts and craft activities.</p>",
                 "start_date": f"{day} 16:00:00",
                 "end_date": f"{day} 17:00:00",
                 "venue": venuemap["church"],
@@ -212,7 +211,7 @@ def create_choir(api_url=None, headers=None, startdate=None, weekcount=52, docre
         #     first_day_month = second_week[calendar.FRIDAY]
 
         # choir is not in August
-        if int(monthnum) not in [8]:
+        if int(monthnum) not in summer:
             data = {
                 "title": f"{daystr} {datestr}{suffixstr} {monthstr} {yearstr}: Junior Choir Rehearsal",
                 "description": f"<p>{daystr} Junior Choir Rehearsal</p>\
