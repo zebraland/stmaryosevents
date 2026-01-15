@@ -10,20 +10,23 @@ import argparse
 import base64
 import calendar
 import datetime
+import os
 import sys
 import time
 
 import pendulum
 import requests
+from dotenv import load_dotenv
 
-WORDPRESS_USER = "stmaryos"
-WORDPRESS_PASSWORD = "QETF Ic1E pp4F pnIw vXL3 5ZS9"
+load_dotenv()
+
+WORDPRESS_USER = os.getenv("WORDPRESS_USER")
+WORDPRESS_PASSWORD = os.getenv("WORDPRESS_PASSWORD")
 WORDPRESS_CREDS = WORDPRESS_USER + ":" + WORDPRESS_PASSWORD
 wordpress_token = base64.b64encode(WORDPRESS_CREDS.encode())
 wordpress_header = {"Authorization": "Basic " + wordpress_token.decode("utf-8")}
 
-WORDPRESS_SERVER = "https://stmaryos.sthompson.org.uk/wp-json/tribe/events/v1/events"
-# WORDPRESS_SERVER = "https://stmaryos.sthompson.org.uk/wp-json/wp/v2/tribe_events"
+WORDPRESS_SERVER = os.getenv("WORDPRESS_SERVER")
 
 daymap = {"01": "st", "21": "st", "31": "st", "02": "nd", "22": "nd", "03": "rd", "23": "rd"}  # codespell:ignore nd
 summer = {8}
