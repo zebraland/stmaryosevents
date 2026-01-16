@@ -70,7 +70,7 @@ extend-select = ["B", "Q", "I", "D", "CPY", "PL", "NPY", "T20", "UP"]
 # UP009 = no utf
 # UP015 = open mode
 # PLR0911 = return statements
-extend-ignore = ["UP009", "UP015", "PLR0911", "PLR1702", "PLR0912", "PLR0913", "PLR0914", "PLR0915", "PLR0917", "T201", "UP022"]
+extend-ignore = ["UP009", "UP015", "PLR0911", "PLR1702", "PLR0912", "PLR0913", "PLR0914", "PLR0915", "PLR0917", "T201"]
 
 [tool.ruff.lint.pylint]
 max-statements = 80
