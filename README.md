@@ -70,14 +70,21 @@ events:
 This would mean thr first and fourth Sunday in the month.
 
 Set `disabled: True` if you want the event to be ignored, for example if something is temporarily not happening.
+
 `desc` is the long HTML formatted text that appears in the event page.
+
 `title` is the name of the event that appears on the pages, it will have the date of the event appended to it.
+
 `excerpt` is optional text that is displayed when the short form of the event is show, for example when the event
 list is displayed. By default `desc` is used if missing, set this if you have long text etc in `desc`
+
 `starttime` is the time the events starts of the from HH:MM:SS
+
 `endtime` is the time the events ends of the from HH:MM:SS
+
 `tags` and `categories` are the slug names for any tags and categories to be assigned to the event. Note that these
 must have been pre-created in the Events Calendar via the Wordpress UI.
+
 `image` is the media ID of the featured image to use, typically this should be something like 16x4.5 aspect ratio
 and is intended to be a banner bar that appears at the top of the event page and to the side when in listing mode.
 
