@@ -42,7 +42,6 @@ CATMAP = {}
 TAGMAP = {}
 ORGMAP = {}
 VENUEMAP = {}
-venuemap = configdata["venuemap"]
 events = configdata["events"]
 
 
@@ -247,7 +246,7 @@ def get_venueid(venue=None, api_url=None, headers=None):
         venue = "stmarys"
 
     if api_url is None:
-        api_url = f"{WORDPRESS_SERVER}/wp-json/tribe/events/v1/venues?slug={venue}"
+        api_url = f"{WORDPRESS_SERVER}/wp-json/tribe/events/v1/venues?slug={venue}&hide_empty=0"
 
     if venue not in VENUEMAP:
         print(f"Lookup venue {venue}")
@@ -272,7 +271,7 @@ def get_orgid(organiser=None, api_url=None, headers=None):
         organiser = "stmarys"
 
     if api_url is None:
-        api_url = f"{WORDPRESS_SERVER}/wp-json/tribe/events/v1/organizers?slug={organiser}"
+        api_url = f"{WORDPRESS_SERVER}/wp-json/tribe/events/v1/organizers?slug={organiser}&hide_empty=0"
 
     if organiser not in ORGMAP:
         print(f"Lookup organiser {organiser}")
@@ -294,7 +293,7 @@ def get_tagid(tag, api_url=None, headers=None):
         headers (dict): Requests object additional headers to send
     """
     if api_url is None:
-        api_url = f"{WORDPRESS_SERVER}/wp-json/wp/v2/tags?slug={tag}"
+        api_url = f"{WORDPRESS_SERVER}/wp-json/wp/v2/tags?slug={tag}&hide_empty=0"
 
     if tag not in TAGMAP:
         print(f"Lookup tag {tag}")
@@ -316,7 +315,7 @@ def get_catid(cat, api_url=None, headers=None):
         headers (dict): Requests object additional headers to send
     """
     if api_url is None:
-        api_url = f"{WORDPRESS_SERVER}/wp-json/tribe/events/v1/categories?slug={cat}"
+        api_url = f"{WORDPRESS_SERVER}/wp-json/tribe/events/v1/categories?slug={cat}&hide_empty=0"
 
     if cat not in CATMAP:
         print(f"Lookup category {cat}")
@@ -325,6 +324,7 @@ def get_catid(cat, api_url=None, headers=None):
         if not data:
             print(f"lookup cat {cat} failed")
             raise Exception
+        print(data)
         CATMAP[cat] = int(data["categories"][0]["id"])
     return int(CATMAP[cat])
 
@@ -372,8 +372,8 @@ def events_by_day(day, api_url=None, headers=None, startdate=None, weekcount=52,
                 date_info=date_info,
                 starttime=event["starttime"],
                 endtime=event["endtime"],
-                tags=event["tags"],
-                categories=event["categories"],
+                tags=event.get("tags", []),
+                categories=event.get("categories", []),
                 image=event.get("image", None),
             )
             create_wordpress_event(data=edata, api_url=api_url, headers=headers, dryrun=dryrun)
