@@ -22,8 +22,29 @@ settings is "Application Passwords".
 Enter the application name, for example "Event creator" and click "Add Application Password", ensure that you
 copy the password and place that in the `.env` configuration file.
 
-For the categories, tags, organisers and venues, these should be json encoded dict formatted like a python dict
-to map the "human name" to the "page id".
+For the categories, tags, organisers and venues, these should be yaml encoded to map the data into a python dict.
 
 For example create the Organiser in the Wordpress UI, and then go back to edit it, in the URL bar you will see
 something like `post.php?post=821`, in this case the "page id" for the Organiser would map to 821.
+
+Example yaml file:
+
+```yaml
+---
+catmap:
+    worship: 22
+    communion: 25
+    evensong: 23
+    family: 24
+tagmap:
+    worship: 13
+    service: 12
+    morning: 11
+    evening: 7
+    family: 9
+orgmap:
+    stmarys: 821
+venuemap:
+    church: 822
+    churchhall: 824
+```
