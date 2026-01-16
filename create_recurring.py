@@ -44,6 +44,9 @@ ORGMAP = {}
 VENUEMAP = {}
 events = configdata["events"]
 
+# this is the max number of wordpress pages to gather
+MAXPAGES = 50
+
 
 def read_wordpress_events(api_url=WORDPRESS_SERVER):
     """Read the current events from wordpress.
@@ -229,7 +232,6 @@ def format_event(
 
     if image:
         data["image"] = str(image)
-    print(data["tags"])
 
     return data
 
@@ -243,14 +245,23 @@ def get_venueid(venue=None, api_url=None, headers=None):
         headers (dict): Requests object additional headers to send
     """
     if venue is None:
-        venue = "stmarys"
+        venue = "st-marys-church"
 
     if api_url is None:
-        api_url = f"{WORDPRESS_SERVER}/wp-json/tribe/events/v1/venues?slug={venue}&hide_empty=0"
+        api_url = f"{WORDPRESS_SERVER}/wp-json/tribe/events/v1/venues?&hide_empty=0"
 
+    if not VENUEMAP:
+        print("Venuemap is empty, try to populate it")
+        response = requests.get(f"{api_url}", timeout=10)
+        data = response.json()
+        for venuedata in data["venues"]:
+            # print(venue)
+            VENUEMAP[venuedata["slug"]] = venuedata["id"]
+
+    # this likely is redundant code as the events API just returns all the venues and ignores the slug
     if venue not in VENUEMAP:
         print(f"Lookup venue {venue}")
-        response = requests.get(api_url, timeout=10)
+        response = requests.get(f"{api_url}&slug={venue}", timeout=10)
         data = response.json()
         if not data:
             print(f"lookup venue {venue} failed")
@@ -268,14 +279,22 @@ def get_orgid(organiser=None, api_url=None, headers=None):
         headers (dict): Requests object additional headers to send
     """
     if organiser is None:
-        organiser = "stmarys"
+        organiser = "st-marys-oldswinford"
 
     if api_url is None:
-        api_url = f"{WORDPRESS_SERVER}/wp-json/tribe/events/v1/organizers?slug={organiser}&hide_empty=0"
+        api_url = f"{WORDPRESS_SERVER}/wp-json/tribe/events/v1/organizers?hide_empty=0"
 
+    if not ORGMAP:
+        print("Orgmap is empty, try to populate it")
+        response = requests.get(f"{api_url}", timeout=10)
+        data = response.json()
+        for org in data["organizers"]:
+            ORGMAP[org["slug"]] = org["id"]
+
+    # this likely is redundant code as the events API just returns all the organisers and ignores the slug
     if organiser not in ORGMAP:
         print(f"Lookup organiser {organiser}")
-        response = requests.get(api_url, timeout=10)
+        response = requests.get(f"{api_url}&slug={organiser}", timeout=10)
         data = response.json()
         if not data:
             print(f"lookup organiser {organiser} failed")
@@ -293,11 +312,23 @@ def get_tagid(tag, api_url=None, headers=None):
         headers (dict): Requests object additional headers to send
     """
     if api_url is None:
-        api_url = f"{WORDPRESS_SERVER}/wp-json/wp/v2/tags?slug={tag}&hide_empty=0"
+        api_url = f"{WORDPRESS_SERVER}/wp-json/wp/v2/tags?hide_empty=0"
+
+    if not TAGMAP:
+        print("Tagmap is empty, try to populate it")
+        page = 1
+        while page < MAXPAGES:
+            response = requests.get(f"{api_url}&per_page=50&page={page}", timeout=10)
+            data = response.json()
+            if not data:
+                break
+            for tagdata in data:
+                TAGMAP[tagdata["slug"]] = int(tagdata["id"])
+            page += 1
 
     if tag not in TAGMAP:
         print(f"Lookup tag {tag}")
-        response = requests.get(api_url, timeout=10)
+        response = requests.get(f"{api_url}&slug={tag}", timeout=10)
         data = response.json()
         if not data:
             print(f"lookup tag {tag} failed")
@@ -315,11 +346,25 @@ def get_catid(cat, api_url=None, headers=None):
         headers (dict): Requests object additional headers to send
     """
     if api_url is None:
-        api_url = f"{WORDPRESS_SERVER}/wp-json/tribe/events/v1/categories?slug={cat}&hide_empty=0"
+        api_url = f"{WORDPRESS_SERVER}/wp-json/tribe/events/v1/categories?hide_empty=0"
+
+    if not CATMAP:
+        print("Catmap is empty, try to populate it")
+        page = 1
+        while page < MAXPAGES:
+            response = requests.get(f"{api_url}&per_page=50&page={page}", timeout=10)
+            data = response.json()
+            if not data or not data["categories"]:
+                break
+            for catdata in data["categories"]:
+                CATMAP[catdata["slug"]] = int(catdata["id"])
+            if page == data["total_pages"]:
+                break
+            page += 1
 
     if cat not in CATMAP:
         print(f"Lookup category {cat}")
-        response = requests.get(api_url, timeout=10)
+        response = requests.get(f"{api_url}&slug={cat}", timeout=10)
         data = response.json()
         if not data:
             print(f"lookup cat {cat} failed")
