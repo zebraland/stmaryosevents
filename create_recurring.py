@@ -49,7 +49,8 @@ events = configdata["events"]
 def read_wordpress_events(api_url=WORDPRESS_SERVER):
     """Read the current events from wordpress.
 
-    api_url (str): The URL for the wordpress event API
+    Args:
+        api_url (str): The URL for the wordpress event API
     """
     response = requests.get(api_url, timeout=10)
     response_json = response.json()
@@ -59,10 +60,11 @@ def read_wordpress_events(api_url=WORDPRESS_SERVER):
 def create_wordpress_event(data, api_url=None, headers=None, dryrun=False):
     """Create a wordpress event.
 
-    data (json): The Payload formatted data for the event
-    api_url (str): The URL for the wordpress event API
-    headers (dict): Requests object additional headers to send
-    dryrun (bool): Dry run create or not
+    Args:
+        data (json): The Payload formatted data for the event
+        api_url (str): The URL for the wordpress event API
+        headers (dict): Requests object additional headers to send
+        dryrun (bool): Dry run create or not
     """
     if api_url is None:
         api_url = f"{WORDPRESS_SERVER}{EVENT_API}"
@@ -82,8 +84,9 @@ def create_wordpress_event(data, api_url=None, headers=None, dryrun=False):
 def get_next_week_by_day(startdate, day):
     """Get the date of the next week by day.
 
-    startdate (str): ISO formatted date to start lookging for the next instance of day
-    day (str): The index of the day number (e.g. Sunday = 6)
+    Args:
+        startdate (str): ISO formatted date to start lookging for the next instance of day
+        day (str): The index of the day number (e.g. Sunday = 6)
     """
     if startdate is None:
         nextweekdate = pendulum.now().next(day).strftime("%Y-%m-%d")
@@ -95,8 +98,9 @@ def get_next_week_by_day(startdate, day):
 def get_dates_for_n_weeks(startdate, weekcount):
     """Get the date of the day for the next N weeks.
 
-    startdate (str): ISO formatted date to start lookging for the next instance of day
-    weekcount (int): The number of weeks to look forward to
+    Args:
+        startdate (str): ISO formatted date to start lookging for the next instance of day
+        weekcount (int): The number of weeks to look forward to
     """
     # start with the first date
     dates = [startdate]
@@ -110,7 +114,8 @@ def get_dates_for_n_weeks(startdate, weekcount):
 def decode_date(date):
     """Decode the date string to something nicer.
 
-    date (str): ISO formatted date string
+    Args:
+        date (str): ISO formatted date string
     """
     date_info = {
         "daystr": datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%A"),
@@ -130,7 +135,8 @@ def decode_date(date):
 def find_date_week(date):
     """Find the week number a date is in.
 
-    date(str): ISO formatted date string
+    Args:
+        date(str): ISO formatted date string
     """
     # get the list of weeks which for the month
     weeks = calendar.monthcalendar(
@@ -153,8 +159,9 @@ def find_date_week(date):
 def format_title(date_info, title):
     """Format the title of an event.
 
-    date_info (dict): Dict from decode_date with information about the date
-    title (str): The title text to include
+    Args:
+        date_info (dict): Dict from decode_date with information about the date
+        title (str): The title text to include
     """
     return (
         f"{title} "
@@ -179,18 +186,19 @@ def format_event(
 ):
     """Format an event for wordpress events calendar.
 
-    title (str): The title for the event
-    description (str): HTML formatted string for the description
-    excerpt (str): HTML formatted string for the except - usually a shorter version of description
-    date (str): ISO formatted date for event
-    date_info (dict): Representation of the date
-    starttime (str): Start time of the event of format HH:MM:SS
-    endtime (str): End time of the event of format HH:MM:SS
-    tags (list): tags to apply to event in string format
-    categories (list): categories to apply to event in string format
-    venue (str): Name of the venue slug
-    organiser (str): Name of the organiser slug
-    image (int): The featured image reference id
+    Args:
+        title (str): The title for the event
+        description (str): HTML formatted string for the description
+        excerpt (str): HTML formatted string for the except - usually a shorter version of description
+        date (str): ISO formatted date for event
+        date_info (dict): Representation of the date
+        starttime (str): Start time of the event of format HH:MM:SS
+        endtime (str): End time of the event of format HH:MM:SS
+        tags (list): tags to apply to event in string format
+        categories (list): categories to apply to event in string format
+        venue (str): Name of the venue slug
+        organiser (str): Name of the organiser slug
+        image (int): The featured image reference id
     """
     if not tags:
         tags = []
@@ -230,9 +238,10 @@ def format_event(
 def get_venueid(venue=None, api_url=None, headers=None):
     """Lookup or read cache of venue id for the venue.
 
-    venue (str): Venue slug name
-    api_url (str): The URL for the wordpress events venues API
-    headers (dict): Requests object additional headers to send
+    Args:
+        venue (str): Venue slug name
+        api_url (str): The URL for the wordpress events venues API
+        headers (dict): Requests object additional headers to send
     """
     if venue is None:
         venue = "stmarys"
@@ -254,9 +263,10 @@ def get_venueid(venue=None, api_url=None, headers=None):
 def get_orgid(organiser=None, api_url=None, headers=None):
     """Lookup or read cache of cat id for category.
 
-    organiser (str): Organiser slugname
-    api_url (str): The URL for the wordpress events organisers API
-    headers (dict): Requests object additional headers to send
+    Args:
+        organiser (str): Organiser slugname
+        api_url (str): The URL for the wordpress events organisers API
+        headers (dict): Requests object additional headers to send
     """
     if organiser is None:
         organiser = "stmarys"
@@ -278,9 +288,10 @@ def get_orgid(organiser=None, api_url=None, headers=None):
 def get_tagid(tag, api_url=None, headers=None):
     """Lookup or read cache of cat id for category.
 
-    tag (str): Tag slug
-    api_url (str): The URL for the wordpress tags API
-    headers (dict): Requests object additional headers to send
+    Args:
+        tag (str): Tag slug
+        api_url (str): The URL for the wordpress tags API
+        headers (dict): Requests object additional headers to send
     """
     if api_url is None:
         api_url = f"{WORDPRESS_SERVER}/wp-json/wp/v2/tags?slug={tag}"
@@ -299,9 +310,10 @@ def get_tagid(tag, api_url=None, headers=None):
 def get_catid(cat, api_url=None, headers=None):
     """Lookup or read cache of cat id for category.
 
-    cat (str): Category name
-    api_url (str): The URL for the wordpress events category API
-    headers (dict): Requests object additional headers to send
+    Args:
+        cat (str): Category name
+        api_url (str): The URL for the wordpress events category API
+        headers (dict): Requests object additional headers to send
     """
     if api_url is None:
         api_url = f"{WORDPRESS_SERVER}/wp-json/tribe/events/v1/categories?slug={cat}"
@@ -320,13 +332,14 @@ def get_catid(cat, api_url=None, headers=None):
 def events_by_day(day, api_url=None, headers=None, startdate=None, weekcount=52, dryrun=False, delay=1):
     """Create a recurring events for a day.
 
-    day (str): The day name to process
-    api_url (str): The URL for the wordpress event API
-    headers (dict): Requests object additional headers to send
-    startdate (str): ISO formatted date to start from
-    weekcount (int): The number of weeks to work forward through
-    dryrun (bool): Dry run create or not
-    delay (int): Seconds to pause between each day to process to help prevent server overload
+    Args:
+        day (str): The day name to process
+        api_url (str): The URL for the wordpress event API
+        headers (dict): Requests object additional headers to send
+        startdate (str): ISO formatted date to start from
+        weekcount (int): The number of weeks to work forward through
+        dryrun (bool): Dry run create or not
+        delay (int): Seconds to pause between each day to process to help prevent server overload
     """
     daynum = list(calendar.day_name).index(day)
     if api_url is None:
@@ -438,7 +451,8 @@ def create_choir(api_url=None, headers=None, startdate=None, weekcount=52, dryru
 def comma_separated_choices(choices):
     """Argparse helper function for comma separated choices.
 
-    choices (list): List of valid choices that can be picked
+    Args:
+        choices (list): List of valid choices that can be picked
     """
 
     def check_types(arg):
