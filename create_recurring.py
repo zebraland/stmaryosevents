@@ -29,6 +29,7 @@ wordpress_header = {"Authorization": "Basic " + wordpress_token.decode("utf-8")}
 
 WORDPRESS_SERVER = os.getenv("WORDPRESS_SERVER")
 CONFIG_FILE = os.getenv("CONFIG_FILE")
+EVENT_API = os.getenv("EVENT_API")
 
 daymap = {"01": "st", "21": "st", "31": "st", "02": "nd", "22": "nd", "03": "rd", "23": "rd"}  # codespell:ignore nd
 summer = {8}
@@ -37,9 +38,10 @@ with open(CONFIG_FILE, encoding="utf-8") as configfile:
     # Use safe_load to prevent execution of arbitrary code
     configdata = yaml.safe_load(configfile)
 
-catmap = configdata["catmap"]
-tagmap = configdata["tagmap"]
-orgmap = configdata["orgmap"]
+CATMAP = {}
+TAGMAP = {}
+ORGMAP = {}
+VENUEMAP = {}
 venuemap = configdata["venuemap"]
 events = configdata["events"]
 
@@ -63,13 +65,15 @@ def create_wordpress_event(data, api_url=None, headers=None, dryrun=False):
     dryrun (bool): Dry run create or not
     """
     if api_url is None:
-        api_url = WORDPRESS_SERVER
+        api_url = f"{WORDPRESS_SERVER}{EVENT_API}"
     if headers is None:
         headers = wordpress_header
     if dryrun:
         response = requests.post(url=api_url, json=data, headers=headers, timeout=10)
         response_json = response.json()
-        print(response_json)
+        # print(response_json)
+        print(f"Event Title: {response_json['title']}")
+        print(f"Event URL: {response_json['url']}")
     else:
         print(f"URL: {api_url}")
         print(data)
@@ -184,18 +188,16 @@ def format_event(
     endtime (str): End time of the event of format HH:MM:SS
     tags (list): tags to apply to event in string format
     categories (list): categories to apply to event in string format
-    venue (str): Index from venuemap of the venue
-    organiser (str): Index from orgmap of the organiser
+    venue (str): Name of the venue slug
+    organiser (str): Name of the organiser slug
     image (int): The featured image reference id
     """
     if not tags:
         tags = []
     if not categories:
         categories = []
-    if not venue:
-        venue = venuemap["church"]
-    if not organiser:
-        organiser = orgmap["stmarys"]
+    venue = get_venueid(venue=venue)
+    organiser = get_orgid(organiser=organiser)
 
     data = {
         "title": str(format_title(date_info=date_info, title=title)),
@@ -213,16 +215,106 @@ def format_event(
     }
 
     for tag in tags:
-        data["tags"].append(int(tagmap[tag]))
+        data["tags"].append(get_tagid(tag))
 
     for cat in categories:
-        data["categories"].append(int(catmap[cat]))
+        data["categories"].append(get_catid(cat))
 
     if image:
         data["image"] = str(image)
     print(data["tags"])
 
     return data
+
+
+def get_venueid(venue=None, api_url=None, headers=None):
+    """Lookup or read cache of venue id for the venue.
+
+    venue (str): Venue slug name
+    api_url (str): The URL for the wordpress events venues API
+    headers (dict): Requests object additional headers to send
+    """
+    if venue is None:
+        venue = "stmarys"
+
+    if api_url is None:
+        api_url = f"{WORDPRESS_SERVER}/wp-json/tribe/events/v1/venues?slug={venue}"
+
+    if venue not in VENUEMAP:
+        print(f"Lookup venue {venue}")
+        response = requests.get(api_url, timeout=10)
+        data = response.json()
+        if not data:
+            print(f"lookup venue {venue} failed")
+            raise Exception
+        VENUEMAP[venue] = int(data["venues"][0]["id"])
+    return int(VENUEMAP[venue])
+
+
+def get_orgid(organiser=None, api_url=None, headers=None):
+    """Lookup or read cache of cat id for category.
+
+    organiser (str): Organiser slugname
+    api_url (str): The URL for the wordpress events organisers API
+    headers (dict): Requests object additional headers to send
+    """
+    if organiser is None:
+        organiser = "stmarys"
+
+    if api_url is None:
+        api_url = f"{WORDPRESS_SERVER}/wp-json/tribe/events/v1/organizers?slug={organiser}"
+
+    if organiser not in ORGMAP:
+        print(f"Lookup organiser {organiser}")
+        response = requests.get(api_url, timeout=10)
+        data = response.json()
+        if not data:
+            print(f"lookup organiser {organiser} failed")
+            raise Exception
+        ORGMAP[organiser] = int(data["organizers"][0]["id"])
+    return int(ORGMAP[organiser])
+
+
+def get_tagid(tag, api_url=None, headers=None):
+    """Lookup or read cache of cat id for category.
+
+    tag (str): Tag slug
+    api_url (str): The URL for the wordpress tags API
+    headers (dict): Requests object additional headers to send
+    """
+    if api_url is None:
+        api_url = f"{WORDPRESS_SERVER}/wp-json/wp/v2/tags?slug={tag}"
+
+    if tag not in TAGMAP:
+        print(f"Lookup tag {tag}")
+        response = requests.get(api_url, timeout=10)
+        data = response.json()
+        if not data:
+            print(f"lookup tag {tag} failed")
+            raise Exception
+        TAGMAP[tag] = int(data[0]["id"])
+    return int(TAGMAP[tag])
+
+
+def get_catid(cat, api_url=None, headers=None):
+    """Lookup or read cache of cat id for category.
+
+    cat (str): Category name
+    api_url (str): The URL for the wordpress events category API
+    headers (dict): Requests object additional headers to send
+    """
+    if api_url is None:
+        api_url = f"{WORDPRESS_SERVER}/wp-json/tribe/events/v1/categories?slug={cat}"
+
+    if cat not in CATMAP:
+        print(f"Lookup category {cat}")
+        response = requests.get(api_url, timeout=10)
+        data = response.json()
+        if not data:
+            print(f"lookup cat {cat} failed")
+            raise Exception
+        CATMAP[cat] = int(data["categories"][0]["id"])
+    return int(CATMAP[cat])
 
 
 def events_by_day(day, api_url=None, headers=None, startdate=None, weekcount=52, dryrun=False, delay=1):
@@ -238,7 +330,7 @@ def events_by_day(day, api_url=None, headers=None, startdate=None, weekcount=52,
     """
     daynum = list(calendar.day_name).index(day)
     if api_url is None:
-        api_url = WORDPRESS_SERVER
+        api_url = f"{WORDPRESS_SERVER}{EVENT_API}"
     if headers is None:
         headers = wordpress_header
     nextweekdate = get_next_week_by_day(startdate=startdate, day=daynum)
@@ -288,7 +380,7 @@ def create_choir(api_url=None, headers=None, startdate=None, weekcount=52, dryru
     """
     friday = calendar.FRIDAY
     if api_url is None:
-        api_url = WORDPRESS_SERVER
+        api_url = f"{WORDPRESS_SERVER}{EVENT_API}"
     if headers is None:
         headers = wordpress_header
     nextweekdate = get_next_week_by_day(startdate=startdate, day=friday)
@@ -380,7 +472,7 @@ def main():
 
     for day in args.days:
         events_by_day(
-            api_url=WORDPRESS_SERVER,
+            api_url=f"{WORDPRESS_SERVER}{EVENT_API}",
             headers=wordpress_header,
             startdate=args.startdate,
             weekcount=args.weeks,

@@ -1,34 +1,4 @@
 ---
-catmap:
-  worship: 22
-  communion: 25
-  evensong: 23
-  family: 24
-  choirrehearsal: 27
-  choralevensong: 26
-tagmap:
-  worship: 13
-  service: 12
-  morning: 11
-  evening: 7
-  afternoon: 4
-  communion: 10
-  evensong: 8
-  family: 9
-  choirrehearsal: 5
-  choralevensong: 6
-  4oclock: 28
-  bcp: 29
-  choir: 35
-  hymns: 36
-  music: 37
-  singing: 38
-orgmap:
-  stmarys: 821
-venuemap:
-  church: 822
-  churchhall: 824
-  coachhouse: 843
 # for days:
 # Monday=0,Tuesday=1,Wednesday=2,Thursday=3,Friday=4,Saturday=5,Sunday=6
 # for weeks, occurance N in month:
