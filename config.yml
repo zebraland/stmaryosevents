@@ -4,7 +4,7 @@
 # for weeks, occurance N in month:
 # First=1, Second=2
 events:
-  sundaymoring:
+  sundaymorning:
     days:
       - 6
     weeks:
@@ -150,3 +150,49 @@ events:
     categories:
       - family
     image: 965
+  adultchoir:
+    days:
+      - 4
+    disabled: False
+    desc: >
+          <h1>Adult Choir Rehearsal</h1>"
+          <p>Our choir normally rehearses on a Friday evening, the Junior Choir start
+          rehearsal earlier than the Adult choir and are joined by the Adult Choir.</p>
+          <p>Music plays an important part in the life of St Mary's Church, information
+          on <a href='/music-at-st-marys/'>joining the choir</a> is available.</p>
+    title: "Adult Choir Rehearsal"
+    starttime: "19:30:00"
+    endtime: "21:00:00"
+    skipmonths:
+      - 8
+    tags:
+      - choir
+      - choirrehearsal
+      - music
+      - singing
+    categories:
+      - choirrehearsal
+    image: 962
+  juniorchoir:
+    days:
+      - 4
+    disabled: True
+    desc: >
+          <h1>Junior Choir Rehearsal</h1>"
+          <p>Our choir normally rehearses on a Friday evening, the Junior Choir start
+          rehearsal earlier than the Adult choir and are joined by the Adult Choir.</p>
+          <p>Music plays an important part in the life of St Mary's Church, information
+          on <a href='/music-at-st-marys/'>joining the choir</a> is available.</p>
+    title: "Junior Choir Rehearsal"
+    starttime: "19:00:00"
+    endtime: "20:30:00"
+    skipmonths:
+      - 8
+    tags:
+      - choir
+      - choirrehearsal
+      - music
+      - singing
+    categories:
+      - choirrehearsal
+    image: 962
