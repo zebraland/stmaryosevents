@@ -41,6 +41,7 @@ catmap = configdata["catmap"]
 tagmap = configdata["tagmap"]
 orgmap = configdata["orgmap"]
 venuemap = configdata["venuemap"]
+events = configdata["events"]
 
 
 def read_wordpress_events(api_url=WORDPRESS_SERVER):
@@ -66,7 +67,7 @@ def create_wordpress_event(data, api_url=None, headers=None, dryrun=False):
     if headers is None:
         headers = wordpress_header
     if dryrun:
-        response = requests.post(url=api_url, data=data, headers=headers, timeout=10)
+        response = requests.post(url=api_url, json=data, headers=headers, timeout=10)
         response_json = response.json()
         print(response_json)
     else:
@@ -197,13 +198,13 @@ def format_event(
         organiser = orgmap["stmarys"]
 
     data = {
-        "title": format_title(date_info=date_info, title=title),
-        "description": description,
-        "excerpt": excerpt,
+        "title": str(format_title(date_info=date_info, title=title)),
+        "description": str(description),
+        "excerpt": str(excerpt),
         "start_date": f"{date} {starttime}",
         "end_date": f"{date} {endtime}",
-        "venue": venue,
-        "organizer": organiser,
+        "venue": str(venue),
+        "organizer": str(organiser),
         "status": "publish",
         "show_map": True,
         "show_map_link": True,
@@ -212,20 +213,22 @@ def format_event(
     }
 
     for tag in tags:
-        data["tags"].append(tagmap[tag])
+        data["tags"].append(int(tagmap[tag]))
 
     for cat in categories:
-        data["categories"].append(catmap[cat])
+        data["categories"].append(int(catmap[cat]))
 
     if image:
-        data["image"] = image
+        data["image"] = str(image)
+    print(data["tags"])
 
     return data
 
 
-def create_sundays(api_url=None, headers=None, startdate=None, weekcount=52, dryrun=False, delay=1):
-    """Create Sunday recurring events.
+def events_by_day(day, api_url=None, headers=None, startdate=None, weekcount=52, dryrun=False, delay=1):
+    """Create a recurring events for a day.
 
+    day (str): The day name to process
     api_url (str): The URL for the wordpress event API
     headers (dict): Requests object additional headers to send
     startdate (str): ISO formatted date to start from
@@ -233,92 +236,43 @@ def create_sundays(api_url=None, headers=None, startdate=None, weekcount=52, dry
     dryrun (bool): Dry run create or not
     delay (int): Seconds to pause between each day to process to help prevent server overload
     """
-    sunday = calendar.SUNDAY
-    print(sunday)
+    daynum = list(calendar.day_name).index(day)
     if api_url is None:
         api_url = WORDPRESS_SERVER
     if headers is None:
         headers = wordpress_header
-    nextweekdate = get_next_week_by_day(startdate=startdate, day=sunday)
+    nextweekdate = get_next_week_by_day(startdate=startdate, day=daynum)
     dates_for_day = get_dates_for_n_weeks(startdate=nextweekdate, weekcount=weekcount)
 
+    # find the events which are on this day and ignore disabled ones
+    filtered_events = {k: v for k, v in events.items() if daynum in v["days"] and (not v.get("disabled", False))}
+
     for date in dates_for_day:
+        # gather some useful data about the date
         date_info = decode_date(date=date)
 
-        desc = f"<p>{date_info['daystr']} morning Holy Communion Service</p>"
-
-        data = format_event(
-            title="Holy Communion from the Book of Common Worship (morning)",
-            description=desc,
-            excerpt=desc,
-            date=date,
-            date_info=date_info,
-            starttime="10:00:00",
-            endtime="11:15:00",
-            tags=["communion"],
-            categories=["communion"],
-            image=963,
-        )
-
-        create_wordpress_event(data, api_url=api_url, headers=headers, dryrun=dryrun)
-
-        service = "Evensong"
-        tags = ["evensong"]
-        categories = ["evensong"]
-        # second Sunday of the month unless it is August
-        if (date_info["week_num"] in {2}) and (int(date_info["monthnum"]) not in summer):
-            service = "Choral Evensong"
-            tags = ["choralevensong"]
-            categories = ["choralevensong"]
-
-        desc = f"<p>{date_info['daystr']} Evening service of {service}</p>"
-
-        data = format_event(
-            title=f"A service of {service} (evening)",
-            description=desc,
-            excerpt=desc,
-            date=date,
-            date_info=date_info,
-            starttime="18:30:00",
-            endtime="19:45:00",
-            tags=tags,
-            categories=categories,
-            image=1010,
-        )
-        create_wordpress_event(data, api_url=api_url, headers=headers, dryrun=dryrun)
-
-        # on the first Sunday of the month, unless it is August
-        if (date_info["week_num"] in {1}) and (int(date_info["monthnum"]) not in summer):
-            desc = (
-                "<h1>4 O&#8217;clock Church</h1>"
-                '<p><img decoding="async" class="aligncenter wp-image-957 size-full" '
-                'src="/wp-content/uploads/2026/01/4oclock-e1768496522387.jpg" alt="" width="1067" height="1453" '
-                'srcset="/wp-content/uploads/2026/01/4oclock-e1768496522387.jpg 1067w, '
-                "/wp-content/uploads/2026/01/4oclock-e1768496522387-220x300.jpg 220w, "
-                "/wp-content/uploads/2026/01/4oclock-e1768496522387-752x1024.jpg 752w, "
-                "/wp-content/uploads/2026/01/4oclock-e1768496522387-768x1046.jpg 768w, "
-                "/wp-content/uploads/2026/01/4oclock-e1768496522387-1024x1394.jpg 1024w, "
-                '/wp-content/uploads/2026/01/4oclock-e1768496522387-793x1080.jpg 793w" sizes="(max-width: 1067px) '
-                '100vw, 1067px" /></p>'
-                "<p>Our 4 O&#8217;clock Church is one of our family focused groups that takes place on the first "
-                "Sunday of the month during school term time. Its lots of fun an features a mix of different themes "
-                "with crafts and activities as well as some lovely food and drink!</p>"
-            )
-            excerpt = "<p>4 O'Clock Church is a family service with different themes, crafts and activities.</p>"
-
-            data = format_event(
-                title="4 O'clock Church - Family Service (afternoon)",
-                description=desc,
-                excerpt=excerpt,
+        for _id, event in filtered_events.items():
+            # for this date, only if the week matches the date's week number
+            # if weeks is not present or Null, then it is every week
+            if event.get("weeks", False) and date_info["week_num"] not in event["weeks"]:
+                continue
+            # if its a month that we should skip, skip it
+            if event.get("skipmonths", []) and int(date_info["monthnum"]) in event.get("skipmonths", []):
+                continue
+            edata = format_event(
+                title=event["title"],
+                description=event["desc"],
+                excerpt=event.get("excerpt", event["desc"]),
                 date=date,
                 date_info=date_info,
-                starttime="16:00:00",
-                endtime="17:00:00",
-                tags=["family", "4oclock"],
-                categories=["family"],
-                image=965,
+                starttime=event["starttime"],
+                endtime=event["endtime"],
+                tags=event["tags"],
+                categories=event["categories"],
+                image=event.get("image", None),
             )
-            create_wordpress_event(data, api_url=api_url, headers=headers, dryrun=dryrun)
+            create_wordpress_event(data=edata, api_url=api_url, headers=headers, dryrun=dryrun)
+
         time.sleep(delay)
 
 
@@ -389,14 +343,34 @@ def create_choir(api_url=None, headers=None, startdate=None, weekcount=52, dryru
         time.sleep(delay)
 
 
+def comma_separated_choices(choices):
+    """Argparse helper function for comma separated choices.
+
+    choices (list): List of valid choices that can be picked
+    """
+
+    def check_types(arg):
+        # 1. Split the string by commas
+        items = [item.strip() for item in arg.split(",")]
+
+        # 2. Validate each item against the allowed choices
+        for item in items:
+            if item not in choices:
+                raise argparse.ArgumentTypeError(f"'{item}' is not a valid choice. Choose from: {', '.join(choices)}")
+        return items
+
+    return check_types
+
+
 def main():
     """The main function of the code."""
     parser = argparse.ArgumentParser(description="Create multiple WP Events Calendar events")
-    parser.add_argument("--sunday", help="Create Sunday worship", action="store_true")
-    # parser.add_argument('--thursday', help='Create Thursday events', action='store_true')
-    parser.add_argument("--thursday", help=argparse.SUPPRESS, action="store_true")
-    parser.add_argument("--friday", help=argparse.SUPPRESS, action="store_true")
-    parser.add_argument("--choir", help="Create choir rehearsals", action="store_true")
+    parser.add_argument(
+        "--days",
+        type=comma_separated_choices(list(calendar.day_name)),
+        help=f"Comma-separated list of days (e.g., {','.join(list(calendar.day_name))})",
+        required=True,
+    )
     parser.add_argument("--dryrun", help="Do not create the actual event", action="store_false")
     parser.add_argument(
         "--weeks", help="Number of weeks to create", type=int, metavar="{1-52}", choices=range(1, 53), default=12
@@ -404,25 +378,17 @@ def main():
     parser.add_argument("--startdate", help="Date after which to start events: yyyy-mm-dd", type=str, default=None)
     args = parser.parse_args()
 
-    if not (args.sunday or args.thursday or args.friday):
-        parser.error("No day specified")
+    for day in args.days:
+        events_by_day(
+            api_url=WORDPRESS_SERVER,
+            headers=wordpress_header,
+            startdate=args.startdate,
+            weekcount=args.weeks,
+            dryrun=args.dryrun,
+            day=day,
+        )
 
-    if args.sunday:
-        create_sundays(
-            api_url=WORDPRESS_SERVER,
-            headers=wordpress_header,
-            startdate=args.startdate,
-            weekcount=args.weeks,
-            dryrun=args.dryrun,
-        )
-    if args.friday:
-        create_choir(
-            api_url=WORDPRESS_SERVER,
-            headers=wordpress_header,
-            startdate=args.startdate,
-            weekcount=args.weeks,
-            dryrun=args.dryrun,
-        )
+    print(args.days)
     # read_wordpress_events()
 
 

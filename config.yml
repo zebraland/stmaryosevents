@@ -1,26 +1,182 @@
 ---
 catmap:
-    worship: 22
-    communion: 25
-    evensong: 23
-    family: 24
-    choirrehearsal: 27
-    choralevensong: 26
+  worship: 22
+  communion: 25
+  evensong: 23
+  family: 24
+  choirrehearsal: 27
+  choralevensong: 26
 tagmap:
-    worship: 13
-    service: 12
-    morning: 11
-    evening: 7
-    afternoon: 4
-    communion: 10
-    evensong: 8
-    family: 9
-    choirrehearsal: 5
-    choralevensong: 6
-    4oclock: 28
+  worship: 13
+  service: 12
+  morning: 11
+  evening: 7
+  afternoon: 4
+  communion: 10
+  evensong: 8
+  family: 9
+  choirrehearsal: 5
+  choralevensong: 6
+  4oclock: 28
+  bcp: 29
+  choir: 35
+  hymns: 36
+  music: 37
+  singing: 38
 orgmap:
-    stmarys: 821
+  stmarys: 821
 venuemap:
-    church: 822
-    churchhall: 824
-    coachhouse: 843
+  church: 822
+  churchhall: 824
+  coachhouse: 843
+# for days:
+# Monday=0,Tuesday=1,Wednesday=2,Thursday=3,Friday=4,Saturday=5,Sunday=6
+# for weeks, occurance N in month:
+# First=1, Second=2
+events:
+  sundaymoring:
+    days:
+      - 6
+    weeks:
+    disabled: False
+    desc: "<p>Parish Holy Communion Service from the Book of Common Worship.</p>"
+    title: "Parish Communion (morning)"
+    starttime: "10:00:00"
+    endtime: "11:15:00"
+    tags:
+      - communion
+      - bcp
+      - service
+      - morning
+      - worship
+      - hymns
+      - music
+      - singing
+    categories:
+      - communion
+      - worship
+    image: 963
+  evensong:
+    days:
+      - 6
+    weeks:
+      - 1
+      - 3
+    disabled: False
+    desc: "<p>Evening service of Evensong</p>"
+    title: "A service of Evensong (evening)"
+    starttime: "18:30:00"
+    endtime: "19:45:00"
+    tags:
+      - bcp
+      - evensong
+      - evening
+      - service
+      - worship
+      - hymns
+      - singing
+    categories:
+      - worship
+      - evensong
+    image: 1010
+  choralevensong:
+    days:
+      - 6
+    weeks:
+      - 2
+    disabled: False
+    desc: "<p>Evening service of Choral Evensong</p>"
+    title: "A service of Choral Evensong (evening)"
+    starttime: "18:30:00"
+    endtime: "19:45:00"
+    skipmonths:
+      - 8
+    tags:
+      - bcp
+      - evensong
+      - evening
+      - service
+      - choir
+      - choralevensong
+      - worship
+      - hymns
+      - music
+      - singing
+    categories:
+      - worship
+      - choralevensong
+      - evensong
+    image: 1010
+  evensongsummer:
+    days:
+      - 6
+    weeks:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+    disabled: False
+    desc: "<p>Evening service of Evensong</p>"
+    title: "A service of Evensong (evening)"
+    starttime: "18:30:00"
+    endtime: "19:45:00"
+    skipmonths:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 9
+      - 10
+      - 11
+      - 12
+    tags:
+      - bcp
+      - evensong
+      - evening
+      - service
+      - worship
+      - hymns
+      - music
+    categories:
+      - worship
+      - evensong
+    image: 1010
+  4oclock:
+    days:
+      - 6
+    weeks:
+      - 1
+    disabled: False
+    desc: >
+          <h1>4 O&#8217;clock Church</h1>
+          <p><img decoding="async" class="aligncenter wp-image-957 size-full"
+          src="/wp-content/uploads/2026/01/4oclock-e1768496522387.jpg" alt="" width="1067" height="1453"
+          srcset="/wp-content/uploads/2026/01/4oclock-e1768496522387.jpg 1067w,
+          /wp-content/uploads/2026/01/4oclock-e1768496522387-220x300.jpg 220w,
+          /wp-content/uploads/2026/01/4oclock-e1768496522387-752x1024.jpg 752w,
+          /wp-content/uploads/2026/01/4oclock-e1768496522387-768x1046.jpg 768w,
+          /wp-content/uploads/2026/01/4oclock-e1768496522387-1024x1394.jpg 1024w,
+          /wp-content/uploads/2026/01/4oclock-e1768496522387-793x1080.jpg 793w" sizes="(max-width: 1067px)
+          100vw, 1067px" /></p>
+          <p>Our 4 O&#8217;clock Church is one of our family focused groups that takes place on the first
+          Sunday of the month during school term time. Its lots of fun an features a mix of different themes
+          with crafts and activities as well as some lovely food and drink!</p>
+    excerpt: "<p>4 O'Clock Church is a family service with different themes, crafts and activities.</p>"
+    title: "4 O'clock Church - Family Service (afternoon)"
+    starttime: "16:00:00"
+    endtime: "17:00:00"
+    skipmonths:
+      - 8
+    tags:
+      - family
+      - 4oclock
+      - afternoon
+      - music
+      - singing
+    categories:
+      - family
+    image: 965
