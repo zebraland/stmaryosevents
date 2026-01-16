@@ -48,3 +48,10 @@ venuemap:
     church: 822
     churchhall: 824
 ```
+
+As the code uses python `dotenv`, anything set in an environment variable will override the content of the `.env`
+file, for example to use a testing `config.yml` you could do:
+
+```shell
+CONFIG_FILE=test.yml ./create_recurring.py --sunday --weeks 5 --startdate 2026-01-01 --dryrun
+```
