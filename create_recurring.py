@@ -10,13 +10,13 @@ import argparse
 import base64
 import calendar
 import datetime
-import json
 import os
 import sys
 import time
 
 import pendulum
 import requests
+import yaml
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -28,14 +28,19 @@ wordpress_token = base64.b64encode(WORDPRESS_CREDS.encode())
 wordpress_header = {"Authorization": "Basic " + wordpress_token.decode("utf-8")}
 
 WORDPRESS_SERVER = os.getenv("WORDPRESS_SERVER")
+CONFIG_FILE = os.getenv("CONFIG_FILE")
 
 daymap = {"01": "st", "21": "st", "31": "st", "02": "nd", "22": "nd", "03": "rd", "23": "rd"}  # codespell:ignore nd
 summer = {8}
 
-catmap = json.loads(os.getenv("CATMAP"))
-tagmap = json.loads(os.getenv("TAGMAP"))
-orgmap = json.loads(os.getenv("ORGMAP"))
-venuemap = json.loads(os.getenv("VENUEMAP"))
+with open(CONFIG_FILE, encoding="utf-8") as configfile:
+    # Use safe_load to prevent execution of arbitrary code
+    configdata = yaml.safe_load(configfile)
+
+catmap = configdata["catmap"]
+tagmap = configdata["tagmap"]
+orgmap = configdata["orgmap"]
+venuemap = configdata["venuemap"]
 
 
 def read_wordpress_events(api_url=WORDPRESS_SERVER):
@@ -229,6 +234,7 @@ def create_sundays(api_url=None, headers=None, startdate=None, weekcount=52, dry
     delay (int): Seconds to pause between each day to process to help prevent server overload
     """
     sunday = calendar.SUNDAY
+    print(sunday)
     if api_url is None:
         api_url = WORDPRESS_SERVER
     if headers is None:
@@ -277,7 +283,7 @@ def create_sundays(api_url=None, headers=None, startdate=None, weekcount=52, dry
             endtime="19:45:00",
             tags=tags,
             categories=categories,
-            image=963,
+            image=1010,
         )
         create_wordpress_event(data, api_url=api_url, headers=headers, dryrun=dryrun)
 

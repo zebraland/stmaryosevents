@@ -1,0 +1,26 @@
+---
+catmap:
+    worship: 22
+    communion: 25
+    evensong: 23
+    family: 24
+    choirrehearsal: 27
+    choralevensong: 26
+tagmap:
+    worship: 13
+    service: 12
+    morning: 11
+    evening: 7
+    afternoon: 4
+    communion: 10
+    evensong: 8
+    family: 9
+    choirrehearsal: 5
+    choralevensong: 6
+    4oclock: 28
+orgmap:
+    stmarys: 821
+venuemap:
+    church: 822
+    churchhall: 824
+    coachhouse: 843

@@ -1,3 +1,4 @@
 dotenv
 pendulum
+PyYAML
 requests
