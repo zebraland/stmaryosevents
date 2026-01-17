@@ -177,6 +177,17 @@ def format_title(date_info, title, include_date=False):
     return f"{title}"
 
 
+def build_slug(date_info, title):
+    """Build the slug for the event.
+
+    Args:
+        date_info (dict): Dict from decode_date with information about the date
+        title (str): The title text to include
+    """
+    slug = f"{date_info['yearstr']}-{date_info['monthnum']}-{date_info['datenum']}-{(title.lower()).replace(' ', '-')}"
+    return slug
+
+
 def format_event(
     title,
     description,
@@ -216,6 +227,7 @@ def format_event(
 
     data = {
         "title": str(format_title(date_info=date_info, title=title)),
+        "slug": str(build_slug(date_info=date_info, title=title)),
         "description": str(description),
         "excerpt": str(excerpt),
         "start_date": f"{date} {starttime}",
