@@ -20,8 +20,7 @@ events:
       - morning
       - worship
       - hymns
-      - music
-      - singing
+      - organ
     categories:
       - communion
       - worship
@@ -31,7 +30,7 @@ events:
       - 6
     weeks:
       - 1
-      - 3
+      - 4
     disabled: False
     desc: "<p>Evening service of Evensong</p>"
     title: "A service of Evensong (evening)"
@@ -43,8 +42,6 @@ events:
       - evening
       - service
       - worship
-      - hymns
-      - singing
     categories:
       - worship
       - evensong
@@ -70,8 +67,7 @@ events:
       - choralevensong
       - worship
       - hymns
-      - music
-      - singing
+      - organ
     categories:
       - worship
       - choralevensong
@@ -109,8 +105,6 @@ events:
       - evening
       - service
       - worship
-      - hymns
-      - music
     categories:
       - worship
       - evensong
@@ -147,6 +141,8 @@ events:
       - afternoon
       - music
       - singing
+      - refreshments
+      - freshexpression
     categories:
       - family
     image: 965
