@@ -29,7 +29,7 @@ wordpress_header = {"Authorization": "Basic " + wordpress_token.decode("utf-8")}
 
 WORDPRESS_SERVER = os.getenv("WORDPRESS_SERVER")
 CONFIG_FILE = os.getenv("CONFIG_FILE")
-EVENT_API = os.getenv("EVENT_API")
+EVENT_API_BASE = os.getenv("EVENT_API_BASE")
 DEFAULT_ORGANISER = os.getenv("DEFAULT_ORGANISER")
 DEFAULT_VENUE = os.getenv("DEFAULT_VENUE")
 
@@ -44,25 +44,54 @@ CATMAP = {}
 TAGMAP = {}
 ORGMAP = {}
 VENUEMAP = {}
-EVENTCACHE = ()
+EVENTCACHE = set()
 events = configdata["events"]
 
 # this is the max number of wordpress pages to gather
 MAXPAGES = 50
 
 
-def read_wordpress_events(api_url=WORDPRESS_SERVER):
+def cache_events(startdate, weekcount, api_url=None):
     """Read the current events from wordpress.
 
     Args:
+        startdate (str): ISO formatted date to start from
+        weekcount (int): Number of weeks to cache
         api_url (str): The URL for the wordpress event API
     """
-    response = requests.get(api_url, timeout=10)
-    response_json = response.json()
-    print(response_json)
+    if api_url is None:
+        api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/events"
+
+    # calculate the end date
+    enddate = pendulum.parse(startdate).add(weeks=int(weekcount)).format("YYYY-MM-DD")
+
+    page = 1
+    total_pages = 1
+    params = {
+        "start_date": f"{startdate} 00:00:00",
+        "end_date": f"{enddate} 23:59:59",
+        "per_page": 2,  # Get as many as possible in one go
+        "page": page,
+    }
+
+    print("Caching existing events")
+    while page <= total_pages:
+        response = requests.get(api_url, params=params)
+
+        if response.status_code != requests.codes.ok:
+            print(f"Error: {response.status_code}")
+            raise Exception
+
+        data = response.json()
+        if page == 1:
+            total_pages = data["total_pages"]
+
+        for event in data["events"]:
+            EVENTCACHE.add(event["slug"])
+        page += 1
 
 
-def create_wordpress_event(data, api_url=None, headers=None, dryrun=False):
+def create_wordpress_event(data, api_url=None, headers=None, dryrun=False, overwrite=False):
     """Create a wordpress event.
 
     Args:
@@ -70,19 +99,30 @@ def create_wordpress_event(data, api_url=None, headers=None, dryrun=False):
         api_url (str): The URL for the wordpress event API
         headers (dict): Requests object additional headers to send
         dryrun (bool): Dry run create or not
+        overwrite (bool): Overwrite existing event?
     """
     if api_url is None:
-        api_url = f"{WORDPRESS_SERVER}{EVENT_API}"
+        api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/events"
     if headers is None:
         headers = wordpress_header
-    if dryrun:
+
+    if data["slug"] in EVENTCACHE:
+        if not overwrite:
+            print(f"Event is present: {data['slug']} - skipping")
+            return
+        print(f"Update event {data['slug']}")
+        return
+
+    if not dryrun:
         response = requests.post(url=api_url, json=data, headers=headers, timeout=10)
         response_json = response.json()
         # print(response_json)
         print(f"Event Title: {response_json['title']}")
         print(f"Event URL: {response_json['url']}")
+        EVENTCACHE.add(data["slug"])
     else:
         print(f"URL: {api_url}")
+        EVENTCACHE.add(data["slug"])
         print(data)
 
 
@@ -266,7 +306,7 @@ def get_venueid(venue=None, api_url=None, headers=None):
         venue = DEFAULT_VENUE
 
     if api_url is None:
-        api_url = f"{WORDPRESS_SERVER}/wp-json/tribe/events/v1/venues?&hide_empty=0"
+        api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/venues?&hide_empty=0"
 
     if not VENUEMAP:
         print("Venuemap is empty, try to populate it")
@@ -305,7 +345,7 @@ def get_orgid(organiser=None, api_url=None, headers=None):
         organiser = DEFAULT_ORGANISER
 
     if api_url is None:
-        api_url = f"{WORDPRESS_SERVER}/wp-json/tribe/events/v1/organizers?hide_empty=0"
+        api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/organizers?hide_empty=0"
 
     if not ORGMAP:
         print("Orgmap is empty, try to populate it")
@@ -375,7 +415,7 @@ def get_catid(cat, api_url=None, headers=None):
         headers (dict): Requests object additional headers to send
     """
     if api_url is None:
-        api_url = f"{WORDPRESS_SERVER}/wp-json/tribe/events/v1/categories?hide_empty=0"
+        api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/categories?hide_empty=0"
 
     if not CATMAP:
         print("Catmap is empty, try to populate it")
@@ -430,7 +470,7 @@ def events_by_day(day, api_url=None, headers=None, startdate=None, weekcount=52,
     """
     daynum = list(calendar.day_name).index(day)
     if api_url is None:
-        api_url = f"{WORDPRESS_SERVER}{EVENT_API}"
+        api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/events"
     if headers is None:
         headers = wordpress_header
     nextweekdate = get_next_week_by_day(startdate=startdate, day=daynum)
@@ -497,7 +537,7 @@ def main():
         help=f"Comma-separated list of days (e.g., {','.join(list(calendar.day_name))})",
         required=True,
     )
-    parser.add_argument("--dryrun", help="Do not create the actual event", action="store_false")
+    parser.add_argument("--dryrun", help="Do not create the actual event", action="store_true")
     parser.add_argument(
         "--weeks", help="Number of weeks to create", type=int, metavar="{1-52}", choices=range(1, 53), default=12
     )
@@ -509,11 +549,11 @@ def main():
     )
     args = parser.parse_args()
 
-    print(args.startdate)
-
+    print(args.dryrun)
+    cache_events(startdate=args.startdate, weekcount=args.weeks)
     for day in args.days:
         events_by_day(
-            api_url=f"{WORDPRESS_SERVER}{EVENT_API}",
+            api_url=f"{WORDPRESS_SERVER}{EVENT_API_BASE}/events",
             headers=wordpress_header,
             startdate=args.startdate,
             weekcount=args.weeks,
