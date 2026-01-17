@@ -160,18 +160,21 @@ def find_date_week(date):
     return None
 
 
-def format_title(date_info, title):
+def format_title(date_info, title, include_date=False):
     """Format the title of an event.
 
     Args:
         date_info (dict): Dict from decode_date with information about the date
         title (str): The title text to include
+        include_date (bool): Include the date in the title?
     """
-    return (
-        f"{title} "
-        f"[{date_info['daystr']} {date_info['datenum'].lstrip('0')}{date_info['suffixstr']} "
-        f"{date_info['monthstr']} {date_info['yearstr']}]"
-    )
+    if include_date:
+        return (
+            f"{title} "
+            f"[{date_info['daystr']} {date_info['datenum'].lstrip('0')}{date_info['suffixstr']} "
+            f"{date_info['monthstr']} {date_info['yearstr']}]"
+        )
+    return f"{title}"
 
 
 def format_event(
@@ -278,7 +281,7 @@ def get_venueid(venue=None, api_url=None, headers=None):
 
 
 def get_orgid(organiser=None, api_url=None, headers=None):
-    """Lookup or read cache of cat id for category.
+    """Lookup or read cache of organiser id from organiser.
 
     Args:
         organiser (str): Organiser slugname
@@ -300,7 +303,7 @@ def get_orgid(organiser=None, api_url=None, headers=None):
 
     # we need to use a different lookup to the organiser API by-slug
     if organiser not in ORGMAP:
-        print(f"Lookup category {organiser}")
+        print(f"Lookup organiser {organiser}")
         slug_api_url = api_url.replace("?", f"/by-slug/{organiser}?")
         response = requests.get(f"{slug_api_url}", timeout=10)
         data = response.json()
@@ -317,7 +320,7 @@ def get_orgid(organiser=None, api_url=None, headers=None):
 
 
 def get_tagid(tag, api_url=None, headers=None):
-    """Lookup or read cache of cat id for category.
+    """Lookup or read cache of tag id for tag.
 
     Args:
         tag (str): Tag slug
@@ -381,6 +384,7 @@ def get_catid(cat, api_url=None, headers=None):
         while page < MAXPAGES:
             # you cannot lookup by slug=cat, Events API returns all
             # so we use search and filter that to find the category
+            # using ?slug=[{cat}]&hide_empty=false might also work
             response = requests.get(f"{api_url}&search={cat}", timeout=10)
             data = response.json()
             if not data or not data["categories"]:
