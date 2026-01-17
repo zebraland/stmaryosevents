@@ -151,7 +151,7 @@ events:
       - 4
     disabled: False
     desc: >
-          <h1>Adult Choir Rehearsal</h1>"
+          <h1>Adult Choir Rehearsal</h1>
           <p>Our choir normally rehearses on a Friday evening, the Junior Choir start
           rehearsal earlier than the Adult choir and are joined by the Adult Choir.</p>
           <p>Music plays an important part in the life of St Mary's Church, information
@@ -174,7 +174,7 @@ events:
       - 4
     disabled: True
     desc: >
-          <h1>Junior Choir Rehearsal</h1>"
+          <h1>Junior Choir Rehearsal</h1>
           <p>Our choir normally rehearses on a Friday evening, the Junior Choir start
           rehearsal earlier than the Adult choir and are joined by the Adult Choir.</p>
           <p>Music plays an important part in the life of St Mary's Church, information
