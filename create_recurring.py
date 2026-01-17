@@ -44,6 +44,7 @@ CATMAP = {}
 TAGMAP = {}
 ORGMAP = {}
 VENUEMAP = {}
+EVENTCACHE = ()
 events = configdata["events"]
 
 # this is the max number of wordpress pages to gather
@@ -500,8 +501,15 @@ def main():
     parser.add_argument(
         "--weeks", help="Number of weeks to create", type=int, metavar="{1-52}", choices=range(1, 53), default=12
     )
-    parser.add_argument("--startdate", help="Date after which to start events: yyyy-mm-dd", type=str, default=None)
+    parser.add_argument(
+        "--startdate",
+        help="Date after which to start events: yyyy-mm-dd, defaults to today",
+        type=str,
+        default=pendulum.now().strftime("%Y-%m-%d"),
+    )
     args = parser.parse_args()
+
+    print(args.startdate)
 
     for day in args.days:
         events_by_day(
