@@ -30,6 +30,8 @@ wordpress_header = {"Authorization": "Basic " + wordpress_token.decode("utf-8")}
 WORDPRESS_SERVER = os.getenv("WORDPRESS_SERVER")
 CONFIG_FILE = os.getenv("CONFIG_FILE")
 EVENT_API = os.getenv("EVENT_API")
+DEFAULT_ORGANISER = os.getenv("DEFAULT_ORGANISER")
+DEFAULT_VENUE = os.getenv("DEFAULT_VENUE")
 
 daymap = {"01": "st", "21": "st", "31": "st", "02": "nd", "22": "nd", "03": "rd", "23": "rd"}  # codespell:ignore nd
 summer = {8}
@@ -245,7 +247,7 @@ def get_venueid(venue=None, api_url=None, headers=None):
         headers (dict): Requests object additional headers to send
     """
     if venue is None:
-        venue = "st-marys-church"
+        venue = DEFAULT_VENUE
 
     if api_url is None:
         api_url = f"{WORDPRESS_SERVER}/wp-json/tribe/events/v1/venues?&hide_empty=0"
@@ -255,18 +257,23 @@ def get_venueid(venue=None, api_url=None, headers=None):
         response = requests.get(f"{api_url}", timeout=10)
         data = response.json()
         for venuedata in data["venues"]:
-            # print(venue)
             VENUEMAP[venuedata["slug"]] = venuedata["id"]
 
-    # this likely is redundant code as the events API just returns all the venues and ignores the slug
+    # we need to use a different lookup to the organiser API by-slug
     if venue not in VENUEMAP:
         print(f"Lookup venue {venue}")
-        response = requests.get(f"{api_url}&slug={venue}", timeout=10)
+        slug_api_url = api_url.replace("?", f"/by-slug/{venue}?")
+        response = requests.get(f"{slug_api_url}", timeout=10)
         data = response.json()
         if not data:
             print(f"lookup venue {venue} failed")
             raise Exception
-        VENUEMAP[venue] = int(data["venues"][0]["id"])
+        VENUEMAP[venue] = int(data["id"])
+
+    if venue not in VENUEMAP:
+        print(f"lookup venue {venue} failed")
+        raise Exception
+
     return int(VENUEMAP[venue])
 
 
@@ -279,7 +286,7 @@ def get_orgid(organiser=None, api_url=None, headers=None):
         headers (dict): Requests object additional headers to send
     """
     if organiser is None:
-        organiser = "st-marys-oldswinford"
+        organiser = DEFAULT_ORGANISER
 
     if api_url is None:
         api_url = f"{WORDPRESS_SERVER}/wp-json/tribe/events/v1/organizers?hide_empty=0"
@@ -291,15 +298,21 @@ def get_orgid(organiser=None, api_url=None, headers=None):
         for org in data["organizers"]:
             ORGMAP[org["slug"]] = org["id"]
 
-    # this likely is redundant code as the events API just returns all the organisers and ignores the slug
+    # we need to use a different lookup to the organiser API by-slug
     if organiser not in ORGMAP:
-        print(f"Lookup organiser {organiser}")
-        response = requests.get(f"{api_url}&slug={organiser}", timeout=10)
+        print(f"Lookup category {organiser}")
+        slug_api_url = api_url.replace("?", f"/by-slug/{organiser}?")
+        response = requests.get(f"{slug_api_url}", timeout=10)
         data = response.json()
         if not data:
             print(f"lookup organiser {organiser} failed")
             raise Exception
-        ORGMAP[organiser] = int(data["organizers"][0]["id"])
+        ORGMAP[organiser] = int(data["id"])
+
+    if organiser not in ORGMAP:
+        print(f"lookup organiser {organiser} failed")
+        raise Exception
+
     return int(ORGMAP[organiser])
 
 
@@ -364,13 +377,25 @@ def get_catid(cat, api_url=None, headers=None):
 
     if cat not in CATMAP:
         print(f"Lookup category {cat}")
-        response = requests.get(f"{api_url}&slug={cat}", timeout=10)
-        data = response.json()
-        if not data:
-            print(f"lookup cat {cat} failed")
-            raise Exception
-        print(data)
-        CATMAP[cat] = int(data["categories"][0]["id"])
+        page = 1
+        while page < MAXPAGES:
+            # you cannot lookup by slug=cat, Events API returns all
+            # so we use search and filter that to find the category
+            response = requests.get(f"{api_url}&search={cat}", timeout=10)
+            data = response.json()
+            if not data or not data["categories"]:
+                break
+            for catdata in data["categories"]:
+                if catdata["slug"] == cat:
+                    CATMAP[cat] = int(catdata["id"])
+                    break
+            if page == data["total_pages"]:
+                break
+            page += 1
+
+    if cat not in CATMAP:
+        print(f"lookup cat {cat} failed")
+        raise Exception
     return int(CATMAP[cat])
 
 
