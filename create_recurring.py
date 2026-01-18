@@ -89,6 +89,7 @@ def cache_events(startdate, weekcount, api_url=None):
         for event in data["events"]:
             EVENTCACHE[event["slug"]] = {"id": event["id"]}
         page += 1
+        print(EVENTCACHE)
 
 
 def create_wordpress_event(data, api_url=None, headers=None, dryrun=False, update=False):
@@ -229,6 +230,9 @@ def build_slug(date_info, title):
         title (str): The title text to include
     """
     slug = f"{date_info['yearstr']}-{date_info['monthnum']}-{date_info['datenum']}-{(title.lower()).replace(' ', '-')}"
+    slug = f"{slug}".replace("---", "-")
+    slug = f"{slug}".replace("(", "")
+    slug = f"{slug}".replace(")", "")
     return slug
 
 
