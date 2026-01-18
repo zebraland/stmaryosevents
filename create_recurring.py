@@ -71,7 +71,7 @@ def cache_events(startdate, weekcount, api_url=None):
     params = {
         "start_date": f"{startdate} 00:00:00",
         "end_date": f"{enddate} 23:59:59",
-        "per_page": 2,  # Get as many as possible in one go
+        "per_page": 50,  # Get as many as possible in one go
         "page": page,
     }
 
@@ -89,7 +89,7 @@ def cache_events(startdate, weekcount, api_url=None):
         for event in data["events"]:
             EVENTCACHE[event["slug"]] = {"id": event["id"]}
         page += 1
-        print(EVENTCACHE)
+        params["page"] = page
 
 
 def create_wordpress_event(data, api_url=None, headers=None, dryrun=False, update=False):
@@ -233,6 +233,7 @@ def build_slug(date_info, title):
     slug = f"{slug}".replace("---", "-")
     slug = f"{slug}".replace("(", "")
     slug = f"{slug}".replace(")", "")
+    slug = f"{slug}".replace("&eacute;", "e")
     return slug
 
 
