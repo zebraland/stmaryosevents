@@ -234,6 +234,7 @@ def build_slug(date_info, title):
     slug = f"{slug}".replace("(", "")
     slug = f"{slug}".replace(")", "")
     slug = f"{slug}".replace("&eacute;", "e")
+    slug = f"{slug}".replace("'", "")
     return slug
 
 
