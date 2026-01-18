@@ -46,6 +46,32 @@ events:
       - worship
       - evensong
     image: 1010
+  taize:
+    days:
+      - 6
+    weeks:
+      - 3
+    disabled: False
+    desc: >
+          <h1>A Taiz&eacute; or Iona Celtic worship service</h1>
+          <p>A Taiz&eacute; or Iona Celtic worship service involves sung and chanted prayers, meditations, a period of
+          silence, liturgical readings, and icons.</p>
+    excerpt: >
+             <p>A Taiz&eacute; or Iona Celtic worship service involves sung and chanted prayers, meditations, a period
+             of silence, liturgical readings, and icons.</p>
+    title: "Taiz&eacute; or Iona Celtic Service (evening)"
+    starttime: "18:30:00"
+    endtime: "19:30:00"
+    tags:
+      - evening
+      - service
+      - worship
+      - taize
+      - iona
+      - chanting
+    categories:
+      - worship
+    image: 1148
   choralevensong:
     days:
       - 6
@@ -165,15 +191,15 @@ events:
           sizes="(max-width: 1080px) 100vw, 1080px" /></p>
           <p>A multigenerational group for children and adults who love to sing.</p>
           <p>A fun session on the second Sunday of each much including refreshments at no cost.</p>
-    excerpt: "<p>Singing Angels is a multigenerational group for children and adults who love to sing.</p>"
-    title: "Singing Angels - Family Service (afternoon)"
+    excerpt: "<p>Bringing FUN &amp; HAPPINESS through SINGING!</p>"
+    title: "Singing Angels (afternoon)"
     starttime: "16:00:00"
     endtime: "17:00:00"
     skipmonths:
       - 8
     tags:
       - family
-      - 4oclock
+      - singingangels
       - afternoon
       - music
       - singing
@@ -182,6 +208,25 @@ events:
     categories:
       - family
     image: 1127
+  thursdaycommunion:
+    days:
+      - 3
+    weeks:
+    disabled: False
+    desc: "<p>Holy Communion from the Book of Common Prayer.</p>"
+    title: "Holy Communion (morning)"
+    starttime: "10:30:00"
+    endtime: "11:15:00"
+    tags:
+      - communion
+      - bcp
+      - service
+      - morning
+      - worship
+    categories:
+      - communion
+      - worship
+    image: 963
   adultchoir:
     days:
       - 4
