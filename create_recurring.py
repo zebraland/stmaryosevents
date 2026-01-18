@@ -18,6 +18,7 @@ import pendulum
 import requests
 import yaml
 from dotenv import load_dotenv
+from requests.exceptions import HTTPError
 
 load_dotenv()
 
@@ -79,8 +80,7 @@ def cache_events(startdate, weekcount, api_url=None):
         response = requests.get(api_url, params=params)
 
         if response.status_code != requests.codes.ok:
-            print(f"Error: {response.status_code}")
-            raise Exception
+            raise HTTPError(f"Unexpected error code: {response.status_code} with {response.text}", response=response)
 
         data = response.json()
         if page == 1:
@@ -325,13 +325,11 @@ def get_venueid(venue=None, api_url=None, headers=None):
         response = requests.get(f"{slug_api_url}", timeout=10)
         data = response.json()
         if not data:
-            print(f"lookup venue {venue} failed")
-            raise Exception
+            raise ValueError(f"lookup venue {venue} failed")
         VENUEMAP[venue] = int(data["id"])
 
     if venue not in VENUEMAP:
-        print(f"lookup venue {venue} failed")
-        raise Exception
+        raise ValueError(f"lookup venue {venue} failed")
 
     return int(VENUEMAP[venue])
 
@@ -364,13 +362,11 @@ def get_orgid(organiser=None, api_url=None, headers=None):
         response = requests.get(f"{slug_api_url}", timeout=10)
         data = response.json()
         if not data:
-            print(f"lookup organiser {organiser} failed")
-            raise Exception
+            raise ValueError(f"lookup organiser {organiser} failed")
         ORGMAP[organiser] = int(data["id"])
 
     if organiser not in ORGMAP:
-        print(f"lookup organiser {organiser} failed")
-        raise Exception
+        raise ValueError(f"lookup organiser {organiser} failed")
 
     return int(ORGMAP[organiser])
 
@@ -403,8 +399,7 @@ def get_tagid(tag, api_url=None, headers=None):
         response = requests.get(f"{api_url}&slug={tag}", timeout=10)
         data = response.json()
         if not data:
-            print(f"lookup tag {tag} failed")
-            raise Exception
+            raise ValueError(f"lookup tag {tag} failed")
         TAGMAP[tag] = int(data[0]["id"])
     return int(TAGMAP[tag])
 
@@ -454,8 +449,7 @@ def get_catid(cat, api_url=None, headers=None):
             page += 1
 
     if cat not in CATMAP:
-        print(f"lookup cat {cat} failed")
-        raise Exception
+        raise ValueError(f"lookup cat {cat} failed")
     return int(CATMAP[cat])
 
 
