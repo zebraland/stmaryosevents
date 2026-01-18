@@ -514,6 +514,7 @@ def events_by_day(
                 tags=event.get("tags", []),
                 categories=event.get("categories", []),
                 image=event.get("image", None),
+                venue=event.get("venue", None),
             )
             create_wordpress_event(data=edata, api_url=api_url, headers=headers, dryrun=dryrun, update=update)
 
