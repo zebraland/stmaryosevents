@@ -4,6 +4,7 @@
 # for weeks, occurance N in month:
 # First=1, Second=2
 events:
+# Sunday
   sundaymorning:
     days:
       - 6
@@ -208,6 +209,55 @@ events:
     categories:
       - family
     image: 1127
+# Monday
+  craftandchat:
+    days:
+      - 0
+    weeks:
+    disabled: False
+    desc: >
+          <h1>Craft and Chat</h1>
+          <p>Everyone welcome - held in the Coach House</p>
+    excerpt: "<p>Everyone welcome - held in the Coach House</p>"
+    title: "Craft and Chat"
+    venue: coach-house
+    starttime: "14:00:00"
+    endtime: "16:00:00"
+    skipmonths:
+      - 8
+    tags:
+      - social
+      - refreshments
+      - craftandchat
+    categories:
+      - social
+      - craftandchat
+    image: 1193
+# Tuesday
+  teaontuesday:
+    days:
+      - 1
+    weeks:
+    disabled: False
+    desc: >
+          <h1>Tea on a Tuesday</h1>
+          <p>All are welcome - held in the Coach House</p>
+    excerpt: "<p>All are welcome - held in the Coach House</p>"
+    title: "Tea on a Tuesday"
+    venue: coach-house
+    starttime: "14:00:00"
+    endtime: "16:00:00"
+    skipmonths:
+      - 8
+    tags:
+      - social
+      - refreshments
+      - teaontuesday
+    categories:
+      - social
+      - teaontuesday
+    image: 1179
+# Thursday
   thursdaycommunion:
     days:
       - 3
@@ -227,6 +277,27 @@ events:
       - communion
       - worship
     image: 963
+# Friday
+  youthclub:
+    days:
+      - 4
+    weeks:
+    disabled: False
+    desc: "<p>Youth Club in the Church Hall</p>"
+    excerpt: "<p>Youth Club in the Church Hall</p>"
+    title: "Youth Club"
+    venue: st-marys-church-hall
+    starttime: "18:00:00"
+    endtime: "19:00:00"
+    skipmonths:
+      - 8
+    tags:
+      - social
+      - youthclub
+    categories:
+      - social
+      - youthclub
+    image: 1167
   adultchoir:
     days:
       - 4
@@ -275,3 +346,36 @@ events:
     categories:
       - choirrehearsal
     image: 962
+# Saturday
+  workwithwardens:
+    days:
+      - 5
+    weeks:
+      - 2
+    disabled: False
+    desc: >
+          <h1>Work with the Wardens</h1>
+          <p>Work with the Wardens takes place on the second Saturday of each month and brings together the local
+          community to help keep the Church and grounds in good condition.</p>
+          <p>You could be:</p>
+          <ul>
+          <li>Weeding the paths</li>
+          <li>Clearing leaves</li>
+          <li>Planting bulbs</li>
+          <li>Dusting the porch</li>
+          </ul>
+    excerpt: "<p>Help keep the church and grounds in good condition!</p>"
+    title: "Work with the Wardens"
+    venue: st-marys-church
+    starttime: "10:00:00"
+    endtime: "12:00:00"
+    skipmonths:
+      - 8
+    tags:
+      - social
+      - refreshments
+      - workwithwardens
+    categories:
+      - social
+      - workwithwardens
+    image: 1206
