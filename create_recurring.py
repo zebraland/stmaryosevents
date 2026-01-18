@@ -459,7 +459,9 @@ def get_catid(cat, api_url=None, headers=None):
     return int(CATMAP[cat])
 
 
-def events_by_day(day, api_url=None, headers=None, startdate=None, weekcount=52, dryrun=False, update=False, delay=1):
+def events_by_day(
+    day, api_url=None, headers=None, startdate=None, weekcount=52, dryrun=False, update=False, limit=None, delay=1
+):
     """Create a recurring events for a day.
 
     Args:
@@ -470,6 +472,7 @@ def events_by_day(day, api_url=None, headers=None, startdate=None, weekcount=52,
         weekcount (int): The number of weeks to work forward through
         dryrun (bool): Dry run create or not
         update (bool): Overwrite existing event?
+        limit (list): List of short event names (the index in events config) to limit to
         delay (int): Seconds to pause between each day to process to help prevent server overload
     """
     daynum = list(calendar.day_name).index(day)
@@ -477,6 +480,9 @@ def events_by_day(day, api_url=None, headers=None, startdate=None, weekcount=52,
         api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/events"
     if headers is None:
         headers = wordpress_header
+    if limit is None:
+        limit = []
+
     nextweekdate = get_next_week_by_day(startdate=startdate, day=daynum)
     dates_for_day = get_dates_for_n_weeks(startdate=nextweekdate, weekcount=weekcount)
 
@@ -487,7 +493,9 @@ def events_by_day(day, api_url=None, headers=None, startdate=None, weekcount=52,
         # gather some useful data about the date
         date_info = decode_date(date=date)
 
-        for _id, event in filtered_events.items():
+        for id, event in filtered_events.items():
+            if limit and id not in limit:
+                continue
             # for this date, only if the week matches the date's week number
             # if weeks is not present or Null, then it is every week
             if event.get("weeks", False) and date_info["week_num"] not in event["weeks"]:
@@ -552,8 +560,10 @@ def main():
         type=str,
         default=pendulum.now().strftime("%Y-%m-%d"),
     )
+    parser.add_argument("--limit", help="Comma separated list of event shortnames to limit to", type=str, default="")
     args = parser.parse_args()
 
+    limit = args.limit.split(",") if args.limit else []
     cache_events(startdate=args.startdate, weekcount=args.weeks)
     for day in args.days:
         events_by_day(
@@ -563,11 +573,9 @@ def main():
             weekcount=args.weeks,
             dryrun=args.dryrun,
             update=args.update,
+            limit=limit,
             day=day,
         )
-
-    print(args.days)
-    # read_wordpress_events()
 
 
 if __name__ == "__main__":
