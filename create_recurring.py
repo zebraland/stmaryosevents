@@ -44,7 +44,7 @@ CATMAP = {}
 TAGMAP = {}
 ORGMAP = {}
 VENUEMAP = {}
-EVENTCACHE = set()
+EVENTCACHE = {}
 events = configdata["events"]
 
 # this is the max number of wordpress pages to gather
@@ -87,11 +87,11 @@ def cache_events(startdate, weekcount, api_url=None):
             total_pages = data["total_pages"]
 
         for event in data["events"]:
-            EVENTCACHE.add(event["slug"])
+            EVENTCACHE[event["slug"]] = {"id": event["id"]}
         page += 1
 
 
-def create_wordpress_event(data, api_url=None, headers=None, dryrun=False, overwrite=False):
+def create_wordpress_event(data, api_url=None, headers=None, dryrun=False, update=False):
     """Create a wordpress event.
 
     Args:
@@ -99,30 +99,33 @@ def create_wordpress_event(data, api_url=None, headers=None, dryrun=False, overw
         api_url (str): The URL for the wordpress event API
         headers (dict): Requests object additional headers to send
         dryrun (bool): Dry run create or not
-        overwrite (bool): Overwrite existing event?
+        update (bool): Overwrite existing event?
     """
     if api_url is None:
         api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/events"
     if headers is None:
         headers = wordpress_header
 
+    method = "POST"
+
     if data["slug"] in EVENTCACHE:
-        if not overwrite:
+        if not update:
             print(f"Event is present: {data['slug']} - skipping")
             return
         print(f"Update event {data['slug']}")
-        return
+        method = "PATCH"
+        data["id"] = int(EVENTCACHE[data["slug"]]["id"])
+        api_url = f"{api_url}/{data['id']}"
 
     if not dryrun:
-        response = requests.post(url=api_url, json=data, headers=headers, timeout=10)
+        response = requests.request(method=method, url=api_url, json=data, headers=headers, timeout=10)
         response_json = response.json()
-        # print(response_json)
         print(f"Event Title: {response_json['title']}")
         print(f"Event URL: {response_json['url']}")
-        EVENTCACHE.add(data["slug"])
+        EVENTCACHE[data["slug"]] = response_json["id"]
     else:
         print(f"URL: {api_url}")
-        EVENTCACHE.add(data["slug"])
+        # EVENTCACHE.add(data["slug"])
         print(data)
 
 
@@ -456,7 +459,7 @@ def get_catid(cat, api_url=None, headers=None):
     return int(CATMAP[cat])
 
 
-def events_by_day(day, api_url=None, headers=None, startdate=None, weekcount=52, dryrun=False, delay=1):
+def events_by_day(day, api_url=None, headers=None, startdate=None, weekcount=52, dryrun=False, update=False, delay=1):
     """Create a recurring events for a day.
 
     Args:
@@ -466,6 +469,7 @@ def events_by_day(day, api_url=None, headers=None, startdate=None, weekcount=52,
         startdate (str): ISO formatted date to start from
         weekcount (int): The number of weeks to work forward through
         dryrun (bool): Dry run create or not
+        update (bool): Overwrite existing event?
         delay (int): Seconds to pause between each day to process to help prevent server overload
     """
     daynum = list(calendar.day_name).index(day)
@@ -503,7 +507,7 @@ def events_by_day(day, api_url=None, headers=None, startdate=None, weekcount=52,
                 categories=event.get("categories", []),
                 image=event.get("image", None),
             )
-            create_wordpress_event(data=edata, api_url=api_url, headers=headers, dryrun=dryrun)
+            create_wordpress_event(data=edata, api_url=api_url, headers=headers, dryrun=dryrun, update=update)
 
         time.sleep(delay)
 
@@ -538,6 +542,7 @@ def main():
         required=True,
     )
     parser.add_argument("--dryrun", help="Do not create the actual event", action="store_true")
+    parser.add_argument("--update", help="Update existing events if found", action="store_true")
     parser.add_argument(
         "--weeks", help="Number of weeks to create", type=int, metavar="{1-52}", choices=range(1, 53), default=12
     )
@@ -549,7 +554,6 @@ def main():
     )
     args = parser.parse_args()
 
-    print(args.dryrun)
     cache_events(startdate=args.startdate, weekcount=args.weeks)
     for day in args.days:
         events_by_day(
@@ -558,6 +562,7 @@ def main():
             startdate=args.startdate,
             weekcount=args.weeks,
             dryrun=args.dryrun,
+            update=args.update,
             day=day,
         )
 
