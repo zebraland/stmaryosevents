@@ -146,6 +146,42 @@ events:
     categories:
       - family
     image: 965
+  singingangels:
+    days:
+      - 6
+    weeks:
+      - 2
+    disabled: False
+    desc: >
+          <h1>Singing Angels</h1>
+          <p><img decoding="async" class="aligncenter wp-image-958 size-full"
+          src="https://www.stmaryos.org.uk/wp-content/uploads/2026/01/singingangels-e1768496539880.jpg"
+          alt="" width="1080" height="1440"
+          srcset="https://www.stmaryos.org.uk/wp-content/uploads/2026/01/singingangels-e1768496539880.jpg 1080w,
+          https://www.stmaryos.org.uk/wp-content/uploads/2026/01/singingangels-e1768496539880-225x300.jpg 225w,
+          https://www.stmaryos.org.uk/wp-content/uploads/2026/01/singingangels-e1768496539880-768x1024.jpg 768w,
+          https://www.stmaryos.org.uk/wp-content/uploads/2026/01/singingangels-e1768496539880-1024x1365.jpg 1024w,
+          https://www.stmaryos.org.uk/wp-content/uploads/2026/01/singingangels-e1768496539880-810x1080.jpg 810w"
+          sizes="(max-width: 1080px) 100vw, 1080px" /></p>
+          <p>A multigenerational group for children and adults who love to sing.</p>
+          <p>A fun session on the second Sunday of each much including refreshments at no cost.</p>
+    excerpt: "<p>Singing Angels is a multigenerational group for children and adults who love to sing.</p>"
+    title: "Singing Angels - Family Service (afternoon)"
+    starttime: "16:00:00"
+    endtime: "17:00:00"
+    skipmonths:
+      - 8
+    tags:
+      - family
+      - 4oclock
+      - afternoon
+      - music
+      - singing
+      - refreshments
+      - freshexpression
+    categories:
+      - family
+    image: 1127
   adultchoir:
     days:
       - 4
