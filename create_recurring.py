@@ -34,7 +34,6 @@ EVENT_API_BASE = os.getenv("EVENT_API_BASE")
 DEFAULT_ORGANISER = os.getenv("DEFAULT_ORGANISER")
 DEFAULT_VENUE = os.getenv("DEFAULT_VENUE")
 
-daymap = {"01": "st", "21": "st", "31": "st", "02": "nd", "22": "nd", "03": "rd", "23": "rd"}  # codespell:ignore nd
 summer = {8}
 
 with open(CONFIG_FILE, encoding="utf-8") as configfile:
@@ -164,18 +163,26 @@ def decode_date(date):
     Args:
         date (str): ISO formatted date string
     """
+    dt = pendulum.parse(date)
+    day = dt.day
+
+    # work out the suffis for the day, i.e. 1st or 5th etc
+    if 11 <= day <= 13:  # noqa: PLR2004
+        suffix = "th"
+    else:
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(day % 10, "th")  # codespell:ignore nd
+
     date_info = {
-        "daystr": datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%A"),
-        "datenum": datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%d"),
-        "monthstr": datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%B"),
-        "monthnum": datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%m"),
-        "yearstr": datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%Y"),
+        "daystr": dt.format("dddd"),
+        "datenum": dt.format("DD"),
+        "monthstr": dt.format("MMMM"),
+        "monthnum": dt.format("MM"),
+        "yearstr": dt.format("YYYY"),
+        "suffixstr": suffix,
+        "week_num": (dt.day - 1) // 7 + 1,
     }
 
-    # look up e.g. 1"st" or 2"nd", default to 20"th"  # codespell:ignore nd
-    date_info["suffixstr"] = daymap.get(date_info["datenum"], "th")
-    # lookup the week number for the current date, i.e. first in the month
-    date_info["week_num"] = find_date_week(date=date)
+    print(date_info)
     return date_info
 
 
