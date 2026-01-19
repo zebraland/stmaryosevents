@@ -9,7 +9,6 @@ will create multiple instances of the event.
 
 import argparse
 import base64
-import calendar
 import logging
 import os
 import pprint
@@ -141,11 +140,12 @@ def get_next_week_by_day(startdate, day):
         startdate (str): ISO formatted date to start lookging for the next instance of day
         day (str): The index of the day number (e.g. Sunday = 6)
     """
-    if startdate is None:
-        nextweekdate = pendulum.now().next(day).strftime("%Y-%m-%d")
-    else:
-        nextweekdate = pendulum.parse(startdate).next(day).strftime("%Y-%m-%d")
-    return nextweekdate
+    # either "today" or the startdate
+    base_dt = pendulum.parse(startdate) if startdate else pendulum.now()
+    # find the next day instance after the date
+    next_date = base_dt.next(day).to_date_string()
+    logging.debug(f"With {startdate} the next {day} is {next_date}")
+    return next_date
 
 
 def get_dates_for_n_weeks(startdate, weekcount):
@@ -173,6 +173,7 @@ def decode_date(date):
 
     # work out the suffis for the day, i.e. 1st or 5th etc
     if 11 <= day <= 13:  # noqa: PLR2004
+        # these are the teens so 11th instead of 11st
         suffix = "th"
     else:
         suffix = {1: "st", 2: "nd", 3: "rd"}.get(day % 10, "th")  # codespell:ignore nd
@@ -184,7 +185,7 @@ def decode_date(date):
         "monthnum": dt.format("MM"),
         "yearstr": dt.format("YYYY"),
         "suffixstr": suffix,
-        "week_num": (dt.day - 1) // 7 + 1,
+        "week_num": (day - 1) // 7 + 1,
     }
 
     logging.debug(f"{date_info}")
@@ -469,6 +470,7 @@ def events_by_day(
         limit (list): List of short event names (the index in events config) to limit to
         delay (int): Seconds to pause between each day to process to help prevent server overload
     """
+    # Maps 'Saturday' -> 5 (0-indexed in Pendulum 3 WeekDay Enum)
     daynum = pendulum.WeekDay[day.upper()].value
     logging.debug(f"Day: {day} maps to {daynum}")
     if api_url is None:
@@ -543,7 +545,7 @@ def main():
     DAYS_OF_WEEK = [day.name.capitalize() for day in pendulum.WeekDay]
     parser.add_argument(
         "--days",
-        type=comma_separated_choices(list(calendar.day_name)),
+        type=comma_separated_choices(DAYS_OF_WEEK),
         help=f"Comma-separated list of days (e.g., {','.join(DAYS_OF_WEEK)})",
         required=True,
     )
