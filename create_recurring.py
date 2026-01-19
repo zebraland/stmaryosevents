@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2026 Simon Thompson
+# logging.debug(f"\n{pprint.pformat(date_info, indent=2)}")
 """Create "recurring" events for a wordpess site with events plugin added.
 
 Events that are created a not recurring (which requires paid plugin), but
@@ -10,7 +11,9 @@ import argparse
 import base64
 import calendar
 import datetime
+import logging
 import os
+import pprint
 import sys
 import time
 
@@ -49,6 +52,9 @@ events = configdata["events"]
 
 # this is the max number of wordpress pages to gather
 MAXPAGES = 50
+
+# logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(level=logging.DEBUG, format="%(levelname)s - %(message)s")
 
 
 def cache_events(startdate, weekcount, api_url=None):
@@ -122,11 +128,11 @@ def create_wordpress_event(data, api_url=None, headers=None, dryrun=False, updat
         response_json = response.json()
         print(f"Event Title: {response_json['title']}")
         print(f"Event URL: {response_json['url']}")
+        logging.debug(f"\n{pprint.pformat(response_json, indent=2)}")
         EVENTCACHE[data["slug"]] = response_json["id"]
     else:
-        print(f"URL: {api_url}")
-        # EVENTCACHE.add(data["slug"])
-        print(data)
+        print(f"URL of API: {api_url}")
+        logging.debug(f"\n{pprint.pformat(data, indent=2)}")
 
 
 def get_next_week_by_day(startdate, day):
@@ -182,7 +188,7 @@ def decode_date(date):
         "week_num": (dt.day - 1) // 7 + 1,
     }
 
-    print(date_info)
+    logging.debug(f"{date_info}")
     return date_info
 
 
@@ -328,6 +334,7 @@ def get_venueid(venue=None, api_url=None, headers=None):
         data = response.json()
         for venuedata in data["venues"]:
             VENUEMAP[venuedata["slug"]] = venuedata["id"]
+        logging.debug(f"VENUEMAP after populate: {VENUEMAP}")
 
     # we need to use a different lookup to the organiser API by-slug
     if venue not in VENUEMAP:
@@ -338,6 +345,7 @@ def get_venueid(venue=None, api_url=None, headers=None):
         if not data:
             raise ValueError(f"lookup venue {venue} failed")
         VENUEMAP[venue] = int(data["id"])
+        logging.debug(f"VENUEMAP after lookup {venue}: {VENUEMAP}")
 
     if venue not in VENUEMAP:
         raise ValueError(f"lookup venue {venue} failed")
@@ -365,6 +373,7 @@ def get_orgid(organiser=None, api_url=None, headers=None):
         data = response.json()
         for org in data["organizers"]:
             ORGMAP[org["slug"]] = org["id"]
+        logging.debug(f"ORGMAP after populate: {ORGMAP}")
 
     # we need to use a different lookup to the organiser API by-slug
     if organiser not in ORGMAP:
@@ -375,6 +384,7 @@ def get_orgid(organiser=None, api_url=None, headers=None):
         if not data:
             raise ValueError(f"lookup organiser {organiser} failed")
         ORGMAP[organiser] = int(data["id"])
+        logging.debug(f"ORGMAP after lookup {organiser}: {ORGMAP}")
 
     if organiser not in ORGMAP:
         raise ValueError(f"lookup organiser {organiser} failed")
@@ -404,6 +414,7 @@ def get_tagid(tag, api_url=None, headers=None):
             for tagdata in data:
                 TAGMAP[tagdata["slug"]] = int(tagdata["id"])
             page += 1
+        logging.debug(f"TAGMAP after lookup: {TAGMAP}")
 
     if tag not in TAGMAP:
         print(f"Lookup tag {tag}")
@@ -412,6 +423,7 @@ def get_tagid(tag, api_url=None, headers=None):
         if not data:
             raise ValueError(f"lookup tag {tag} failed")
         TAGMAP[tag] = int(data[0]["id"])
+        logging.debug(f"TAGMAP after lookup {tag}: {TAGMAP}")
     return int(TAGMAP[tag])
 
 
@@ -439,6 +451,7 @@ def get_catid(cat, api_url=None, headers=None):
             if page == data["total_pages"]:
                 break
             page += 1
+        logging.debug(f"CATMAP after lookup: {CATMAP}")
 
     if cat not in CATMAP:
         print(f"Lookup category {cat}")
@@ -458,6 +471,7 @@ def get_catid(cat, api_url=None, headers=None):
             if page == data["total_pages"]:
                 break
             page += 1
+        logging.debug(f"CATMAP after lookup {cat}: {CATMAP}")
 
     if cat not in CATMAP:
         raise ValueError(f"lookup cat {cat} failed")
@@ -480,7 +494,8 @@ def events_by_day(
         limit (list): List of short event names (the index in events config) to limit to
         delay (int): Seconds to pause between each day to process to help prevent server overload
     """
-    daynum = list(calendar.day_name).index(day)
+    daynum = pendulum.WeekDay[day.upper()].value
+    logging.debug(f"Day: {day} maps to {daynum}")
     if api_url is None:
         api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/events"
     if headers is None:
@@ -490,6 +505,7 @@ def events_by_day(
 
     nextweekdate = get_next_week_by_day(startdate=startdate, day=daynum)
     dates_for_day = get_dates_for_n_weeks(startdate=nextweekdate, weekcount=weekcount)
+    logging.debug(f"dates for {day}: {dates_for_day}")
 
     # find the events which are on this day and ignore disabled ones
     filtered_events = {k: v for k, v in events.items() if daynum in v["days"] and (not v.get("disabled", False))}
@@ -549,10 +565,11 @@ def comma_separated_choices(choices):
 def main():
     """The main function of the code."""
     parser = argparse.ArgumentParser(description="Create multiple WP Events Calendar events")
+    DAYS_OF_WEEK = [day.name.capitalize() for day in pendulum.WeekDay]
     parser.add_argument(
         "--days",
         type=comma_separated_choices(list(calendar.day_name)),
-        help=f"Comma-separated list of days (e.g., {','.join(list(calendar.day_name))})",
+        help=f"Comma-separated list of days (e.g., {','.join(DAYS_OF_WEEK)})",
         required=True,
     )
     parser.add_argument("--dryrun", help="Do not create the actual event", action="store_true")
@@ -567,7 +584,16 @@ def main():
         default=pendulum.now().strftime("%Y-%m-%d"),
     )
     parser.add_argument("--limit", help="Comma separated list of event shortnames to limit to", type=str, default="")
+    parser.add_argument("-v", "--verbose", "--debug", action="store_true", help="Show debug messages")
     args = parser.parse_args()
+
+    if args.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+        # requests and urllib will be noisy otherwise
+        logging.getLogger("requests").setLevel(logging.WARNING)
+        logging.getLogger("urllib3").setLevel(logging.WARNING)
+    else:
+        logging.getLogger().setLevel(logging.INFO)
 
     limit = args.limit.split(",") if args.limit else []
     cache_events(startdate=args.startdate, weekcount=args.weeks)
