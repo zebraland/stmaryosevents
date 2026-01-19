@@ -57,16 +57,18 @@ docstring-code-line-length = "dynamic"
 [tool.ruff.lint]
 # turn on unstable rules (like CPY)
 preview = true
-# B = flake8-bugbear
-# Q = flake8-quotes
-# I = isort (in black mode)
-# D = docstr
-# CPY = flake8-copyright
-# PL = pylint
-# NPY = numpy
-# T20 = no print
-# UP = upgrade Python styles
-extend-select = ["B", "Q", "I", "D", "CPY", "PL", "NPY", "T20", "UP"]
+extend-select = [
+  "ANN", # type annotations
+  "B", # flake8-bugbear
+  "Q", # flake8-quotes
+  "I", # isort (in black mode)
+  "D", # docstr
+  "CPY", # flake8-copyright
+  "PL", # pylint
+  "NPY", # numpy
+  "T20", # no print
+  "UP", # upgrade Python styles
+]
 # UP009 = no utf
 # UP015 = open mode
 # PLR0911 = return statements

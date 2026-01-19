@@ -14,6 +14,7 @@ import os
 import pprint
 import sys
 import time
+from collections.abc import Callable
 
 import pendulum
 import requests
@@ -55,13 +56,13 @@ MAXPAGES = 50
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)s - %(message)s")
 
 
-def cache_events(startdate, weekcount, api_url=None):
+def cache_events(startdate: str, weekcount: int, api_url: bool = None) -> None:
     """Read the current events from wordpress.
 
     Args:
-        startdate (str): ISO formatted date to start from
-        weekcount (int): Number of weeks to cache
-        api_url (str): The URL for the wordpress event API
+        startdate: ISO formatted date to start from
+        weekcount: Number of weeks to cache
+        api_url: The URL for the wordpress event API
     """
     if api_url is None:
         api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/events"
@@ -95,20 +96,23 @@ def cache_events(startdate, weekcount, api_url=None):
         params["page"] = page
 
 
-def create_wordpress_event(data, api_url=None, headers=None, dryrun=False, update=False):
+def create_wordpress_event(
+    data: dict, api_url: str = None, headers: dict = None, dryrun: bool = False, update: bool = False
+) -> None:
     """Create a wordpress event.
 
     Args:
-        data (json): The Payload formatted data for the event
-        api_url (str): The URL for the wordpress event API
-        headers (dict): Requests object additional headers to send
-        dryrun (bool): Dry run create or not
-        update (bool): Overwrite existing event?
+        data: The Payload formatted data for the event
+        api_url: The URL for the wordpress event API
+        headers: Requests object additional headers to send
+        dryrun: Dry run create or not
+        update: Overwrite existing event?
     """
     if api_url is None:
         api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/events"
     if headers is None:
         headers = wordpress_header
+    print(type(data))
 
     method = "POST"
 
@@ -133,12 +137,15 @@ def create_wordpress_event(data, api_url=None, headers=None, dryrun=False, updat
         logging.debug(f"\n{pprint.pformat(data, indent=2)}")
 
 
-def get_next_week_by_day(startdate, day):
+def get_next_week_by_day(startdate: str, day: str) -> str:
     """Get the date of the next week by day.
 
     Args:
-        startdate (str): ISO formatted date to start lookging for the next instance of day
-        day (str): The index of the day number (e.g. Sunday = 6)
+        startdate: ISO formatted date to start lookging for the next instance of day
+        day: The index of the day number (e.g. Sunday = 6)
+
+    Returns:
+        An ISO formatted date of the next day
     """
     # either "today" or the startdate
     base_dt = pendulum.parse(startdate) if startdate else pendulum.now()
@@ -148,12 +155,15 @@ def get_next_week_by_day(startdate, day):
     return next_date
 
 
-def get_dates_for_n_weeks(startdate, weekcount):
+def get_dates_for_n_weeks(startdate: str, weekcount: int) -> list:
     """Get the date of the day for the next N weeks.
 
     Args:
-        startdate (str): ISO formatted date to start lookging for the next instance of day
-        weekcount (int): The number of weeks to look forward to
+        startdate: ISO formatted date to start lookging for the next instance of day
+        weekcount: The number of weeks to look forward to
+
+    Returns:
+        A list of dates for the same date for the next N weeks
     """
     # start with the first date
     dates = [startdate]
@@ -162,11 +172,14 @@ def get_dates_for_n_weeks(startdate, weekcount):
     return dates
 
 
-def decode_date(date):
+def decode_date(date: str) -> dict:
     """Decode the date string to something nicer.
 
     Args:
-        date (str): ISO formatted date string
+        date: ISO formatted date string
+
+    Returns:
+        dict of data represented by the date
     """
     dt = pendulum.parse(date)
     day = dt.day
@@ -192,13 +205,16 @@ def decode_date(date):
     return date_info
 
 
-def format_title(date_info, title, include_date=False):
+def format_title(date_info: dict, title: str, include_date: bool = False) -> str:
     """Format the title of an event.
 
     Args:
-        date_info (dict): Dict from decode_date with information about the date
-        title (str): The title text to include
-        include_date (bool): Include the date in the title?
+        date_info: Dict from decode_date with information about the date
+        title: The title text to include
+        include_date: Include the date in the title?
+
+    Returns:
+        A formatted string for the title
     """
     if include_date:
         return (
@@ -209,12 +225,15 @@ def format_title(date_info, title, include_date=False):
     return f"{title}"
 
 
-def build_slug(date_info, title):
+def build_slug(date_info: dict, title: str) -> str:
     """Build the slug for the event.
 
     Args:
-        date_info (dict): Dict from decode_date with information about the date
-        title (str): The title text to include
+        date_info: Dict from decode_date with information about the date
+        title: The title text to include
+
+    Returns:
+        The constructing string slug
     """
     slug = f"{date_info['yearstr']}-{date_info['monthnum']}-{date_info['datenum']}-{(title.lower()).replace(' ', '-')}"
     slug = f"{slug}".replace("---", "-")
@@ -226,34 +245,37 @@ def build_slug(date_info, title):
 
 
 def format_event(
-    title,
-    description,
-    excerpt,
-    date,
-    date_info,
-    starttime,
-    endtime,
-    tags=None,
-    categories=None,
-    venue=None,
-    organiser=None,
-    image=None,
-):
+    title: str,
+    description: str,
+    excerpt: str,
+    date: str,
+    date_info: dict,
+    starttime: str,
+    endtime: str,
+    tags: list[str] = None,
+    categories: list[str] = None,
+    venue: str = None,
+    organiser: str = None,
+    image: int = None,
+) -> dict:
     """Format an event for wordpress events calendar.
 
     Args:
-        title (str): The title for the event
-        description (str): HTML formatted string for the description
-        excerpt (str): HTML formatted string for the except - usually a shorter version of description
-        date (str): ISO formatted date for event
-        date_info (dict): Representation of the date
-        starttime (str): Start time of the event of format HH:MM:SS
-        endtime (str): End time of the event of format HH:MM:SS
-        tags (list): tags to apply to event in string format
-        categories (list): categories to apply to event in string format
-        venue (str): Name of the venue slug
-        organiser (str): Name of the organiser slug
-        image (int): The featured image reference id
+        title: The title for the event
+        description: HTML formatted string for the description
+        excerpt: HTML formatted string for the except - usually a shorter version of description
+        date: ISO formatted date for event
+        date_info: Representation of the date
+        starttime: Start time of the event of format HH:MM:SS
+        endtime: End time of the event of format HH:MM:SS
+        tags: tags to apply to event in string format
+        categories: categories to apply to event in string format
+        venue: Name of the venue slug
+        organiser: Name of the organiser slug
+        image: The featured image reference id
+
+    Returns:
+        dict of the data for the wordpress API
     """
     if not tags:
         tags = []
@@ -290,13 +312,16 @@ def format_event(
     return data
 
 
-def get_venueid(venue=None, api_url=None, headers=None):
+def get_venueid(venue: str = None, api_url: str = None, headers: dict = None) -> int:
     """Lookup or read cache of venue id for the venue.
 
     Args:
-        venue (str): Venue slug name
-        api_url (str): The URL for the wordpress events venues API
-        headers (dict): Requests object additional headers to send
+        venue: Venue slug name
+        api_url: The URL for the wordpress events venues API
+        headers: Requests object additional headers to send
+
+    Returns:
+        integer ID of the venue
     """
     if venue is None:
         venue = DEFAULT_VENUE
@@ -329,13 +354,16 @@ def get_venueid(venue=None, api_url=None, headers=None):
     return int(VENUEMAP[venue])
 
 
-def get_orgid(organiser=None, api_url=None, headers=None):
+def get_orgid(organiser: str = None, api_url: str = None, headers: dict = None) -> int:
     """Lookup or read cache of organiser id from organiser.
 
     Args:
-        organiser (str): Organiser slugname
-        api_url (str): The URL for the wordpress events organisers API
-        headers (dict): Requests object additional headers to send
+        organiser: Organiser slugname
+        api_url: The URL for the wordpress events organisers API
+        headers: Requests object additional headers to send
+
+    Returns:
+        integer ID of the organiser
     """
     if organiser is None:
         organiser = DEFAULT_ORGANISER
@@ -368,13 +396,16 @@ def get_orgid(organiser=None, api_url=None, headers=None):
     return int(ORGMAP[organiser])
 
 
-def get_tagid(tag, api_url=None, headers=None):
+def get_tagid(tag: str, api_url: str = None, headers: dict = None) -> int:
     """Lookup or read cache of tag id for tag.
 
     Args:
-        tag (str): Tag slug
-        api_url (str): The URL for the wordpress tags API
-        headers (dict): Requests object additional headers to send
+        tag: Tag slug
+        api_url: The URL for the wordpress tags API
+        headers: Requests object additional headers to send
+
+    Returns:
+        integer ID of the tag
     """
     if api_url is None:
         api_url = f"{WORDPRESS_SERVER}/wp-json/wp/v2/tags?hide_empty=0"
@@ -403,13 +434,16 @@ def get_tagid(tag, api_url=None, headers=None):
     return int(TAGMAP[tag])
 
 
-def get_catid(cat, api_url=None, headers=None):
+def get_catid(cat: str, api_url: str = None, headers: dict = None) -> int:
     """Lookup or read cache of cat id for category.
 
     Args:
-        cat (str): Category name
-        api_url (str): The URL for the wordpress events category API
-        headers (dict): Requests object additional headers to send
+        cat: Category name
+        api_url: The URL for the wordpress events category API
+        headers: Requests object additional headers to send
+
+    Returns:
+        integer ID of the category
     """
     if api_url is None:
         api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/categories?hide_empty=0"
@@ -455,20 +489,28 @@ def get_catid(cat, api_url=None, headers=None):
 
 
 def events_by_day(
-    day, api_url=None, headers=None, startdate=None, weekcount=52, dryrun=False, update=False, limit=None, delay=1
-):
+    day: str,
+    api_url: str = None,
+    headers: dict = None,
+    startdate: str = None,
+    weekcount: int = 52,
+    dryrun: bool = False,
+    update: bool = False,
+    limit: list[str] = None,
+    delay: int = 1,
+) -> None:
     """Create a recurring events for a day.
 
     Args:
-        day (str): The day name to process
-        api_url (str): The URL for the wordpress event API
-        headers (dict): Requests object additional headers to send
-        startdate (str): ISO formatted date to start from
-        weekcount (int): The number of weeks to work forward through
-        dryrun (bool): Dry run create or not
-        update (bool): Overwrite existing event?
-        limit (list): List of short event names (the index in events config) to limit to
-        delay (int): Seconds to pause between each day to process to help prevent server overload
+        day: The day name to process
+        api_url: The URL for the wordpress event API
+        headers: Requests object additional headers to send
+        startdate: ISO formatted date to start from
+        weekcount: The number of weeks to work forward through
+        dryrun: Dry run create or not
+        update: Overwrite existing event?
+        limit: List of short event names (the index in events config) to limit to
+        delay: Seconds to pause between each day to process to help prevent server overload
     """
     # Maps 'Saturday' -> 5 (0-indexed in Pendulum 3 WeekDay Enum)
     daynum = pendulum.WeekDay[day.upper()].value
@@ -519,14 +561,14 @@ def events_by_day(
         time.sleep(delay)
 
 
-def comma_separated_choices(choices):
+def comma_separated_choices(choices: list[str]) -> Callable[[str], list[str]]:
     """Argparse helper function for comma separated choices.
 
     Args:
-        choices (list): List of valid choices that can be picked
+        choices: List of valid choices that can be picked
     """
 
-    def check_types(arg):
+    def check_types(arg: str) -> list[str]:
         # 1. Split the string by commas
         items = [item.strip() for item in arg.split(",")]
 
@@ -539,7 +581,7 @@ def comma_separated_choices(choices):
     return check_types
 
 
-def main():
+def main() -> None:
     """The main function of the code."""
     parser = argparse.ArgumentParser(description="Create multiple WP Events Calendar events")
     DAYS_OF_WEEK = [day.name.capitalize() for day in pendulum.WeekDay]
