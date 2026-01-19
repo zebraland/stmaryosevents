@@ -3,6 +3,27 @@
 This tool is indented to create "recurring" events using the Events Calendar plugin for Wordpress. The events
 are not really recurring but multiple instances of the event.
 
+## Running
+
+```shell
+./create_recurring.py --startdate 2026-01-01 --enddate 2026-02-28 --days Tuesday --update --dryrun
+```
+
+`--startdate` ISO formatted date to start creating events
+
+`--enddate` ISO formatted date to stop creating events
+
+`--weeks` Alternative to `--enddate` to create number of weeks
+
+`--days` Comma separated list of days to create events for, e.g. to limit to Tueday and Friday `--days Tuesday,Friday`
+
+`--limit` Comma separated list of events to limit to, this is the key from the config file, e.g.
+`--limit taize,evensong`
+
+`--dryrun` Show what would happen without actually creating
+
+`--debug` Show extensive debugging information
+
 ## Setup
 
 Ensure that the required packages are installed for the Python script:
@@ -69,7 +90,7 @@ Example yaml file:
 events:
   sundaymoring:
     days:
-      - 6
+      - Sunday
     weeks:
     disabled: False
     desc: "<p>Parish Holy Communion Service from the Book of Common Worship.</p>"
@@ -91,7 +112,7 @@ events:
     image: 963
 ```
 
-`days` is a list of days the event occurs on where Monday=0,Tuesday=1,Wednesday=2,Thursday=3,Friday=4,Saturday=5,Sunday=6
+`days` is a list of days the event occurs on
 `weeks` when empty or missing means every day occurrence in the month, by setting to 1 and 3, that would mean
 repeat on the first and third occurrence day in the month. When used something like:
 
@@ -99,10 +120,12 @@ repeat on the first and third occurrence day in the month. When used something l
 events:
   sundaymoring:
     days:
-      - 6
+      - Sunday
     weeks:
       - 1
-      - 4
+      - 3
+    skipmonths:
+      - January
 ```
 
 This would mean thr first and fourth Sunday in the month.
