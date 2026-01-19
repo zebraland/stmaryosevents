@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # Copyright (c) 2026 Simon Thompson
-# logging.debug(f"\n{pprint.pformat(date_info, indent=2)}")
 """Create "recurring" events for a wordpess site with events plugin added.
 
 Events that are created a not recurring (which requires paid plugin), but
@@ -11,16 +10,18 @@ import argparse
 import base64
 import logging
 import os
-import pprint
 import sys
 import time
 from collections.abc import Callable
 
 import pendulum
 import requests
+import rich
 import yaml
 from dotenv import load_dotenv
 from requests.exceptions import HTTPError
+from rich.console import Console
+from rich.logging import RichHandler
 
 load_dotenv()
 
@@ -52,8 +53,25 @@ events = configdata["events"]
 # this is the max number of wordpress pages to gather
 MAXPAGES = 50
 
-# logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
-logging.basicConfig(level=logging.DEBUG, format="%(levelname)s - %(message)s")
+console = Console()
+
+
+def setup_logging(verbose: bool) -> None:
+    """Setup logging using Rich for beautiful CLI output."""
+    level = logging.DEBUG if verbose else logging.INFO
+
+    # Configure the root logger to use RichHandler
+    logging.basicConfig(
+        level=level,
+        format="%(message)s",  # Rich handles the timestamp and level formatting
+        # show_time - should the time stamp be shown?
+        # show_level - should the log level be shown?
+        handlers=[RichHandler(rich_tracebacks=True, markup=True, show_time=False, show_level=False)],
+    )
+
+    # Silence noisy third-party libraries
+    logging.getLogger("requests").setLevel(logging.WARNING)
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
 def cache_events(startdate: str, weekcount: int, api_url: bool = None) -> None:
@@ -79,7 +97,7 @@ def cache_events(startdate: str, weekcount: int, api_url: bool = None) -> None:
         "page": page,
     }
 
-    print("Caching existing events")
+    console.print("Caching existing events")
     while page <= total_pages:
         response = requests.get(api_url, params=params)
 
@@ -112,15 +130,14 @@ def create_wordpress_event(
         api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/events"
     if headers is None:
         headers = wordpress_header
-    print(type(data))
 
     method = "POST"
 
     if data["slug"] in EVENTCACHE:
         if not update:
-            print(f"Event is present: {data['slug']} - skipping")
+            console.print(f"Event is present: {data['slug']} - skipping")
             return
-        print(f"Update event {data['slug']}")
+        console.print(f"Update event {data['slug']}")
         method = "PATCH"
         data["id"] = int(EVENTCACHE[data["slug"]]["id"])
         api_url = f"{api_url}/{data['id']}"
@@ -128,13 +145,13 @@ def create_wordpress_event(
     if not dryrun:
         response = requests.request(method=method, url=api_url, json=data, headers=headers, timeout=10)
         response_json = response.json()
-        print(f"Event Title: {response_json['title']}")
-        print(f"Event URL: {response_json['url']}")
-        logging.debug(f"\n{pprint.pformat(response_json, indent=2)}")
+        console.print(f"Event Title: {response_json['title']}")
+        console.print(f"Event URL: {response_json['url']}")
+        logging.debug(f"\n{rich.print_json(response_json, indent=2)}")
         EVENTCACHE[data["slug"]] = response_json["id"]
     else:
-        print(f"URL of API: {api_url}")
-        logging.debug(f"\n{pprint.pformat(data, indent=2)}")
+        console.print(f"URL of API: {api_url}")
+        logging.debug(data)
 
 
 def get_next_week_by_day(startdate: str, day: str) -> str:
@@ -330,7 +347,7 @@ def get_venueid(venue: str = None, api_url: str = None, headers: dict = None) ->
         api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/venues?&hide_empty=0"
 
     if not VENUEMAP:
-        print("Venuemap is empty, try to populate it")
+        console.print("Venuemap is empty, try to populate it")
         response = requests.get(f"{api_url}", timeout=10)
         data = response.json()
         for venuedata in data["venues"]:
@@ -339,7 +356,7 @@ def get_venueid(venue: str = None, api_url: str = None, headers: dict = None) ->
 
     # we need to use a different lookup to the organiser API by-slug
     if venue not in VENUEMAP:
-        print(f"Lookup venue {venue}")
+        console.print(f"Lookup venue {venue}")
         slug_api_url = api_url.replace("?", f"/by-slug/{venue}?")
         response = requests.get(f"{slug_api_url}", timeout=10)
         data = response.json()
@@ -372,7 +389,7 @@ def get_orgid(organiser: str = None, api_url: str = None, headers: dict = None) 
         api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/organizers?hide_empty=0"
 
     if not ORGMAP:
-        print("Orgmap is empty, try to populate it")
+        console.print("Orgmap is empty, try to populate it")
         response = requests.get(f"{api_url}", timeout=10)
         data = response.json()
         for org in data["organizers"]:
@@ -381,7 +398,7 @@ def get_orgid(organiser: str = None, api_url: str = None, headers: dict = None) 
 
     # we need to use a different lookup to the organiser API by-slug
     if organiser not in ORGMAP:
-        print(f"Lookup organiser {organiser}")
+        console.print(f"Lookup organiser {organiser}")
         slug_api_url = api_url.replace("?", f"/by-slug/{organiser}?")
         response = requests.get(f"{slug_api_url}", timeout=10)
         data = response.json()
@@ -411,7 +428,7 @@ def get_tagid(tag: str, api_url: str = None, headers: dict = None) -> int:
         api_url = f"{WORDPRESS_SERVER}/wp-json/wp/v2/tags?hide_empty=0"
 
     if not TAGMAP:
-        print("Tagmap is empty, try to populate it")
+        console.print("Tagmap is empty, try to populate it")
         page = 1
         while page < MAXPAGES:
             response = requests.get(f"{api_url}&per_page=50&page={page}", timeout=10)
@@ -424,7 +441,7 @@ def get_tagid(tag: str, api_url: str = None, headers: dict = None) -> int:
         logging.debug(f"TAGMAP after lookup: {TAGMAP}")
 
     if tag not in TAGMAP:
-        print(f"Lookup tag {tag}")
+        console.print(f"Lookup tag {tag}")
         response = requests.get(f"{api_url}&slug={tag}", timeout=10)
         data = response.json()
         if not data:
@@ -449,7 +466,7 @@ def get_catid(cat: str, api_url: str = None, headers: dict = None) -> int:
         api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/categories?hide_empty=0"
 
     if not CATMAP:
-        print("Catmap is empty, try to populate it")
+        console.print("Catmap is empty, try to populate it")
         page = 1
         while page < MAXPAGES:
             response = requests.get(f"{api_url}&per_page=50&page={page}", timeout=10)
@@ -464,7 +481,7 @@ def get_catid(cat: str, api_url: str = None, headers: dict = None) -> int:
         logging.debug(f"CATMAP after lookup: {CATMAP}")
 
     if cat not in CATMAP:
-        print(f"Lookup category {cat}")
+        console.print(f"Lookup category {cat}")
         page = 1
         while page < MAXPAGES:
             # you cannot lookup by slug=cat, Events API returns all
@@ -606,13 +623,7 @@ def main() -> None:
     parser.add_argument("-v", "--verbose", "--debug", action="store_true", help="Show debug messages")
     args = parser.parse_args()
 
-    if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
-        # requests and urllib will be noisy otherwise
-        logging.getLogger("requests").setLevel(logging.WARNING)
-        logging.getLogger("urllib3").setLevel(logging.WARNING)
-    else:
-        logging.getLogger().setLevel(logging.INFO)
+    setup_logging(verbose=args.verbose)
 
     limit = args.limit.split(",") if args.limit else []
     cache_events(startdate=args.startdate, weekcount=args.weeks)
