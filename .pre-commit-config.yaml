@@ -22,6 +22,16 @@ repos:
       # Run the formatter.
       - id: ruff-format
 
+  # you must do pip install deptry
+  - repo: local
+    hooks:
+      - id: deptry
+        name: deptry
+        entry: deptry .
+        language: system
+        pass_filenames: false
+        always_run: true
+
   - repo: https://github.com/markdownlint/markdownlint
     rev: v0.13.0
     hooks:

@@ -1,6 +1,0 @@
-python-dotenv  # Provides 'import dotenv'
-PyYAML         # Provides 'import yaml'
-pendulum
-requests
-rich
-typer
