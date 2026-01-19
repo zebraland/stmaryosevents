@@ -360,29 +360,32 @@ def get_venueid(venue: str = None, api_url: str = None, headers: dict = None) ->
     venue = venue or DEFAULT_VENUE
     api_url = api_url or f"{WORDPRESS_SERVER}{EVENT_API_BASE}/venues?&hide_empty=0"
 
-    if not VENUEMAP:
-        console.print("Venuemap is empty, try to populate it")
-        response = requests.get(f"{api_url}", timeout=10)
-        data = response.json()
-        for venuedata in data["venues"]:
-            VENUEMAP[venuedata["slug"]] = venuedata["id"]
-        logging.debug(f"VENUEMAP after populate: {VENUEMAP}")
+    try:
+        return int(VENUEMAP[venue])
+    except KeyError:
+        if not VENUEMAP:
+            console.print("Venuemap is empty, try to populate it")
+            response = requests.get(f"{api_url}", timeout=10)
+            data = response.json()
+            for venuedata in data["venues"]:
+                VENUEMAP[venuedata["slug"]] = venuedata["id"]
+            logging.debug(f"VENUEMAP after populate: {VENUEMAP}")
 
-    # we need to use a different lookup to the organiser API by-slug
-    if venue not in VENUEMAP:
-        console.print(f"Lookup venue {venue}")
-        slug_api_url = api_url.replace("?", f"/by-slug/{venue}?")
-        response = requests.get(f"{slug_api_url}", timeout=10)
-        data = response.json()
-        if not data:
-            raise ValueError(f"lookup venue {venue} failed")
-        VENUEMAP[venue] = int(data["id"])
-        logging.debug(f"VENUEMAP after lookup {venue}: {VENUEMAP}")
+        # we need to use a different lookup to the organiser API by-slug
+        if venue not in VENUEMAP:
+            console.print(f"Lookup venue {venue}")
+            slug_api_url = api_url.replace("?", f"/by-slug/{venue}?")
+            response = requests.get(f"{slug_api_url}", timeout=10)
+            data = response.json()
+            if not data:
+                raise ValueError(f"lookup venue {venue} failed") from None
+            VENUEMAP[venue] = int(data["id"])
+            logging.debug(f"VENUEMAP after lookup {venue}: {VENUEMAP}")
 
-    if venue not in VENUEMAP:
-        raise ValueError(f"lookup venue {venue} failed")
-
-    return int(VENUEMAP[venue])
+    try:
+        return int(VENUEMAP[venue])
+    except KeyError:
+        raise ValueError(f"lookup venue {venue} failed") from None
 
 
 def get_orgid(organiser: str = None, api_url: str = None, headers: dict = None) -> int:
@@ -399,29 +402,32 @@ def get_orgid(organiser: str = None, api_url: str = None, headers: dict = None) 
     organiser = organiser or DEFAULT_ORGANISER
     api_url = api_url or f"{WORDPRESS_SERVER}{EVENT_API_BASE}/organizers?hide_empty=0"
 
-    if not ORGMAP:
-        console.print("Orgmap is empty, try to populate it")
-        response = requests.get(f"{api_url}", timeout=10)
-        data = response.json()
-        for org in data["organizers"]:
-            ORGMAP[org["slug"]] = org["id"]
-        logging.debug(f"ORGMAP after populate: {ORGMAP}")
+    try:
+        return int(ORGMAP[organiser])
+    except KeyError:
+        if not ORGMAP:
+            console.print("Orgmap is empty, try to populate it")
+            response = requests.get(f"{api_url}", timeout=10)
+            data = response.json()
+            for org in data["organizers"]:
+                ORGMAP[org["slug"]] = org["id"]
+            logging.debug(f"ORGMAP after populate: {ORGMAP}")
 
-    # we need to use a different lookup to the organiser API by-slug
-    if organiser not in ORGMAP:
-        console.print(f"Lookup organiser {organiser}")
-        slug_api_url = api_url.replace("?", f"/by-slug/{organiser}?")
-        response = requests.get(f"{slug_api_url}", timeout=10)
-        data = response.json()
-        if not data:
-            raise ValueError(f"lookup organiser {organiser} failed")
-        ORGMAP[organiser] = int(data["id"])
-        logging.debug(f"ORGMAP after lookup {organiser}: {ORGMAP}")
+        # we need to use a different lookup to the organiser API by-slug
+        if organiser not in ORGMAP:
+            console.print(f"Lookup organiser {organiser}")
+            slug_api_url = api_url.replace("?", f"/by-slug/{organiser}?")
+            response = requests.get(f"{slug_api_url}", timeout=10)
+            data = response.json()
+            if not data:
+                raise ValueError(f"lookup organiser {organiser} failed") from None
+            ORGMAP[organiser] = int(data["id"])
+            logging.debug(f"ORGMAP after lookup {organiser}: {ORGMAP}")
 
-    if organiser not in ORGMAP:
-        raise ValueError(f"lookup organiser {organiser} failed")
-
-    return int(ORGMAP[organiser])
+    try:
+        return int(ORGMAP[organiser])
+    except KeyError:
+        raise ValueError(f"lookup organiser {organiser} failed") from None
 
 
 def get_tagid(tag: str, api_url: str = None, headers: dict = None) -> int:
@@ -437,28 +443,35 @@ def get_tagid(tag: str, api_url: str = None, headers: dict = None) -> int:
     """
     api_url = api_url or f"{WORDPRESS_SERVER}/wp-json/wp/v2/tags?hide_empty=0"
 
-    if not TAGMAP:
-        console.print("Tagmap is empty, try to populate it")
-        page = 1
-        while page < MAXPAGES:
-            response = requests.get(f"{api_url}&per_page=50&page={page}", timeout=10)
+    try:
+        # fast path - already cached
+        return int(TAGMAP[tag])
+    except KeyError:
+        if not TAGMAP:
+            console.print("Tagmap is empty, try to populate it")
+            page = 1
+            while page < MAXPAGES:
+                response = requests.get(f"{api_url}&per_page=50&page={page}", timeout=10)
+                data = response.json()
+                if not data:
+                    break
+                for tagdata in data:
+                    TAGMAP[tagdata["slug"]] = int(tagdata["id"])
+                page += 1
+            logging.debug(f"TAGMAP after lookup: {TAGMAP}")
+
+        if tag not in TAGMAP:
+            console.print(f"Lookup tag {tag}")
+            response = requests.get(f"{api_url}&slug={tag}", timeout=10)
             data = response.json()
             if not data:
-                break
-            for tagdata in data:
-                TAGMAP[tagdata["slug"]] = int(tagdata["id"])
-            page += 1
-        logging.debug(f"TAGMAP after lookup: {TAGMAP}")
-
-    if tag not in TAGMAP:
-        console.print(f"Lookup tag {tag}")
-        response = requests.get(f"{api_url}&slug={tag}", timeout=10)
-        data = response.json()
-        if not data:
-            raise ValueError(f"lookup tag {tag} failed")
-        TAGMAP[tag] = int(data[0]["id"])
-        logging.debug(f"TAGMAP after lookup {tag}: {TAGMAP}")
-    return int(TAGMAP[tag])
+                raise ValueError(f"lookup tag {tag} failed") from None
+            TAGMAP[tag] = int(data[0]["id"])
+            logging.debug(f"TAGMAP after lookup {tag}: {TAGMAP}")
+    try:
+        return int(TAGMAP[tag])
+    except KeyError:
+        raise ValueError(f"lookup tag {tag} failed") from None
 
 
 def get_catid(cat: str, api_url: str = None, headers: dict = None) -> int:
@@ -474,44 +487,48 @@ def get_catid(cat: str, api_url: str = None, headers: dict = None) -> int:
     """
     api_url = api_url or f"{WORDPRESS_SERVER}{EVENT_API_BASE}/categories?hide_empty=0"
 
-    if not CATMAP:
-        console.print("Catmap is empty, try to populate it")
-        page = 1
-        while page < MAXPAGES:
-            response = requests.get(f"{api_url}&per_page=50&page={page}", timeout=10)
-            data = response.json()
-            if not data or not data["categories"]:
-                break
-            for catdata in data["categories"]:
-                CATMAP[catdata["slug"]] = int(catdata["id"])
-            if page == data["total_pages"]:
-                break
-            page += 1
-        logging.debug(f"CATMAP after lookup: {CATMAP}")
-
-    if cat not in CATMAP:
-        console.print(f"Lookup category {cat}")
-        page = 1
-        while page < MAXPAGES:
-            # you cannot lookup by slug=cat, Events API returns all
-            # so we use search and filter that to find the category
-            # using ?slug=[{cat}]&hide_empty=false might also work
-            response = requests.get(f"{api_url}&search={cat}", timeout=10)
-            data = response.json()
-            if not data or not data["categories"]:
-                break
-            for catdata in data["categories"]:
-                if catdata["slug"] == cat:
-                    CATMAP[cat] = int(catdata["id"])
+    try:
+        return int(CATMAP[cat])
+    except KeyError:
+        if not CATMAP:
+            console.print("Catmap is empty, try to populate it")
+            page = 1
+            while page < MAXPAGES:
+                response = requests.get(f"{api_url}&per_page=50&page={page}", timeout=10)
+                data = response.json()
+                if not data or not data["categories"]:
                     break
-            if page == data["total_pages"]:
-                break
-            page += 1
-        logging.debug(f"CATMAP after lookup {cat}: {CATMAP}")
+                for catdata in data["categories"]:
+                    CATMAP[catdata["slug"]] = int(catdata["id"])
+                if page == data["total_pages"]:
+                    break
+                page += 1
+            logging.debug(f"CATMAP after lookup: {CATMAP}")
 
-    if cat not in CATMAP:
-        raise ValueError(f"lookup cat {cat} failed")
-    return int(CATMAP[cat])
+        if cat not in CATMAP:
+            console.print(f"Lookup category {cat}")
+            page = 1
+            while page < MAXPAGES:
+                # you cannot lookup by slug=cat, Events API returns all
+                # so we use search and filter that to find the category
+                # using ?slug=[{cat}]&hide_empty=false might also work
+                response = requests.get(f"{api_url}&search={cat}", timeout=10)
+                data = response.json()
+                if not data or not data["categories"]:
+                    break
+                for catdata in data["categories"]:
+                    if catdata["slug"] == cat:
+                        CATMAP[cat] = int(catdata["id"])
+                        break
+                if page == data["total_pages"]:
+                    break
+                page += 1
+            logging.debug(f"CATMAP after lookup {cat}: {CATMAP}")
+
+    try:
+        return int(CATMAP[cat])
+    except KeyError:
+        raise ValueError(f"lookup cat {cat} failed") from None
 
 
 def events_by_day(

@@ -78,6 +78,7 @@ extend-select = [
 ]
 # PLR0911 = return statements
 extend-ignore = [
+  "PLR0912", # Too many branches
   "PLR0913", # Too many arguments in function definition
   "PLR0917", # Too many positional arguments
 ]
