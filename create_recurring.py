@@ -126,10 +126,8 @@ def create_wordpress_event(
         dryrun: Dry run create or not
         update: Overwrite existing event?
     """
-    if api_url is None:
-        api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/events"
-    if headers is None:
-        headers = wordpress_header
+    api_url = api_url or f"{WORDPRESS_SERVER}{EVENT_API_BASE}/events"
+    headers = headers or wordpress_header
 
     method = "POST"
 
@@ -294,10 +292,8 @@ def format_event(
     Returns:
         dict of the data for the wordpress API
     """
-    if not tags:
-        tags = []
-    if not categories:
-        categories = []
+    tags = tags or []
+    categories = categories or []
     venue = get_venueid(venue=venue)
     organiser = get_orgid(organiser=organiser)
 
@@ -340,11 +336,8 @@ def get_venueid(venue: str = None, api_url: str = None, headers: dict = None) ->
     Returns:
         integer ID of the venue
     """
-    if venue is None:
-        venue = DEFAULT_VENUE
-
-    if api_url is None:
-        api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/venues?&hide_empty=0"
+    venue = venue or DEFAULT_VENUE
+    api_url = api_url or f"{WORDPRESS_SERVER}{EVENT_API_BASE}/venues?&hide_empty=0"
 
     if not VENUEMAP:
         console.print("Venuemap is empty, try to populate it")
@@ -382,11 +375,8 @@ def get_orgid(organiser: str = None, api_url: str = None, headers: dict = None) 
     Returns:
         integer ID of the organiser
     """
-    if organiser is None:
-        organiser = DEFAULT_ORGANISER
-
-    if api_url is None:
-        api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/organizers?hide_empty=0"
+    organiser = organiser or DEFAULT_ORGANISER
+    api_url = api_url or f"{WORDPRESS_SERVER}{EVENT_API_BASE}/organizers?hide_empty=0"
 
     if not ORGMAP:
         console.print("Orgmap is empty, try to populate it")
@@ -424,8 +414,7 @@ def get_tagid(tag: str, api_url: str = None, headers: dict = None) -> int:
     Returns:
         integer ID of the tag
     """
-    if api_url is None:
-        api_url = f"{WORDPRESS_SERVER}/wp-json/wp/v2/tags?hide_empty=0"
+    api_url = api_url or f"{WORDPRESS_SERVER}/wp-json/wp/v2/tags?hide_empty=0"
 
     if not TAGMAP:
         console.print("Tagmap is empty, try to populate it")
@@ -462,8 +451,7 @@ def get_catid(cat: str, api_url: str = None, headers: dict = None) -> int:
     Returns:
         integer ID of the category
     """
-    if api_url is None:
-        api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/categories?hide_empty=0"
+    api_url = api_url or f"{WORDPRESS_SERVER}{EVENT_API_BASE}/categories?hide_empty=0"
 
     if not CATMAP:
         console.print("Catmap is empty, try to populate it")

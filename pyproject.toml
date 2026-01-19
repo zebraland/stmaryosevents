@@ -71,7 +71,10 @@ extend-select = [
   "UP", # upgrade Python styles
 ]
 # PLR0911 = return statements
-extend-ignore = ["PLR0911", "PLR1702", "PLR0912", "PLR0913", "PLR0914", "PLR0915", "PLR0917"]
+extend-ignore = [
+  "PLR0913", # Too many arguments in function definition
+  "PLR0917", # Too many positional arguments
+]
 
 [tool.ruff.lint.pylint]
 max-statements = 80
