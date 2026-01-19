@@ -7,10 +7,10 @@ events:
 # Weekdays
   morningprayer:
     days:
-      - 1
-      - 2
-      - 3
-      - 4
+      - Tuesday
+      - Wednesday
+      - Thursday
+      - Friday
     disabled: False
     desc: >
           <h1>Morning Prayer</h1>
@@ -27,10 +27,10 @@ events:
       - worship
   eveningprayersummer:
     days:
-      - 1
-      - 2
-      - 3
-      - 4
+      - Tuesday
+      - Wednesday
+      - Thursday
+      - Friday
     disabled: False
     desc: >
           <h1>Evening Prayer</h1>
@@ -52,10 +52,10 @@ events:
       - worship
   eveningprayerwinter:
     days:
-      - 1
-      - 2
-      - 3
-      - 4
+      - Tuesday
+      - Wednesday
+      - Thursday
+      - Friday
     disabled: False
     desc: >
           <h1>Evening Prayer</h1>
@@ -104,7 +104,7 @@ events:
 # Tuesday
   teaontuesday:
     days:
-      - 1
+      - Tuesday
     weeks:
     disabled: True
     desc: >
@@ -126,7 +126,7 @@ events:
 # Wednesday
   morningpraise:
     days:
-      - 2
+      - Wednesday
     weeks:
       - 1
     disabled: False
@@ -146,7 +146,7 @@ events:
     image: 1209
   encountermeditation:
     days:
-      - 2
+      - Wednesday
     weeks:
       - 2
     disabled: False
@@ -168,7 +168,7 @@ events:
 # Thursday
   thursdaycommunion:
     days:
-      - 3
+      - Thursday
     weeks:
     disabled: False
     desc: "<p>Holy Communion from the Book of Common Prayer.</p>"
@@ -188,7 +188,7 @@ events:
 # Friday
   youthclub:
     days:
-      - 4
+      - Friday
     weeks:
     disabled: False
     desc: "<p>Youth Club in the Church Hall</p>"
@@ -208,7 +208,7 @@ events:
     image: 1167
   adultchoir:
     days:
-      - 4
+      - Friday
     disabled: False
     desc: >
           <h1>Adult Choir Rehearsal</h1>
@@ -232,7 +232,7 @@ events:
     image: 962
   juniorchoir:
     days:
-      - 4
+      - Friday
     disabled: True
     desc: >
           <h1>Junior Choir Rehearsal</h1>
@@ -257,7 +257,7 @@ events:
 # Saturday
   workwithwardens:
     days:
-      - 5
+      - Saturday
     weeks:
       - 2
     disabled: False
@@ -290,7 +290,7 @@ events:
 # Sunday
   sundaymorning:
     days:
-      - 6
+      - Sunday
     weeks:
     disabled: False
     desc: "<p>Parish Holy Communion Service from the Book of Common Worship.</p>"
@@ -311,7 +311,7 @@ events:
     image: 963
   choralevensong:
     days:
-      - 6
+      - Sunday
     weeks:
       - 2
     disabled: False
@@ -338,7 +338,7 @@ events:
     image: 1010
   taize:
     days:
-      - 6
+      - Sunday
     weeks:
       - 3
     disabled: False
@@ -365,7 +365,7 @@ events:
     image: 1148
   evensong:
     days:
-      - 6
+      - Sunday
     weeks:
       - 4
     disabled: False
@@ -385,7 +385,7 @@ events:
     image: 1010
   wholenesshealing:
     days:
-      - 6
+      - Sunday
     weeks:
       - 5
     disabled: False
@@ -410,7 +410,7 @@ events:
     image: 1010
   evensongsummer:
     days:
-      - 6
+      - Sunday
     weeks:
       - 1
       - 2
@@ -446,7 +446,7 @@ events:
     image: 1010
   4oclock:
     days:
-      - 6
+      - Sunday
     weeks:
       - 1
     disabled: False
@@ -481,7 +481,7 @@ events:
     image: 965
   singingangels:
     days:
-      - 6
+      - Sunday
     weeks:
       - 3
     disabled: False

@@ -137,13 +137,14 @@ def create_wordpress_event(
     headers = headers or wordpress_header
 
     method = "POST"
+    actionstr = "create"
 
     if data["slug"] in EVENTCACHE:
         if not update:
             console.print(f"Event is present: {data['slug']} - skipping")
             return
-        console.print(f"Update event {data['slug']}")
         method = "PATCH"
+        actionstr = "update"
         data["id"] = int(EVENTCACHE[data["slug"]]["id"])
         api_url = f"{api_url}/{data['id']}"
 
@@ -152,12 +153,12 @@ def create_wordpress_event(
     if not dryrun:
         response = requests.request(method=method, url=api_url, json=data, headers=headers, timeout=10)
         response_json = response.json()
-        console.print(f"Event Title: {response_json['title']}")
+        console.print(f"Event Title (actionstr): {response_json['title']}")
         console.print(f"Event URL: {response_json['url']}")
         logging.debug(response_json)
         EVENTCACHE[data["slug"]] = response_json["id"]
     else:
-        console.print(f"Would create {data['slug']} at {data['start_date']}")
+        console.print(f"Would {actionstr} {data['slug']} at {data['start_date']}")
         logging.debug(data)
 
 
@@ -558,7 +559,7 @@ def events_by_day(
     dates_for_day = get_dates_until(startdate=startdate, enddate=enddate, daynum=daynum)
 
     # find the events which are on this day and ignore disabled ones
-    filtered_events = {k: v for k, v in events.items() if daynum in v["days"] and (not v.get("disabled", False))}
+    filtered_events = {k: v for k, v in events.items() if day in v["days"] and (not v.get("disabled", False))}
 
     for date in dates_for_day:
         # gather some useful data about the date
@@ -589,6 +590,7 @@ def events_by_day(
             )
             create_wordpress_event(data=edata, api_url=api_url, headers=headers, dryrun=dryrun, update=update)
 
+    if not dryrun:
         time.sleep(delay)
 
 
@@ -598,7 +600,6 @@ def validate_days(value: list[str]) -> list[str]:
     Args:
         value: Comma seaprated listed of days
     """
-    # Your existing logic using Pendulum 3
     DAYS_OF_WEEK = [day.name.capitalize() for day in pendulum.WeekDay]
     items = [item.strip() for item in value.split(",")]
     for item in items:
@@ -606,6 +607,19 @@ def validate_days(value: list[str]) -> list[str]:
             # Typer-specific error reporting
             raise typer.BadParameter(f"'{item}' is not a valid day. Valid choices are: {', '.join(DAYS_OF_WEEK)}")
     return items
+
+
+def validate_date(value: str) -> str:
+    """Validate a date is correct.
+
+    Args:
+        value: ISO formatted date string
+    """
+    try:
+        pendulum.parse(value)
+    except pendulum.parsing.exceptions.ParserError:
+        raise typer.BadParameter(f"'{value}' is not a valid ISO date. Should be YYYY-MM-DD e.g. 2026-01-31") from None
+    return value
 
 
 def break_limit(value: str) -> list[str]:
@@ -637,8 +651,10 @@ def main(
         typer.Option(callback=break_limit, help="Comma-separated list of keys from events file to limit to"),
     ] = None,
     weeks: Annotated[int, typer.Option(min=1, max=52)] = 12,
-    startdate: Annotated[str, typer.Option(help="ISO start date")] = pendulum.now().to_date_string(),
-    enddate: Annotated[str, typer.Option(help="ISO end date (overrides weeks)")] = None,
+    startdate: Annotated[
+        str, typer.Option(callback=validate_date, help="ISO start date")
+    ] = pendulum.now().to_date_string(),
+    enddate: Annotated[str, typer.Option(callback=validate_date, help="ISO end date (overrides weeks)")] = None,
     update: Annotated[bool, typer.Option(help="Update existing events if found")] = False,
     verbose: Annotated[bool, typer.Option("--verbose", "--debug")] = False,
     dryrun: Annotated[bool, typer.Option(help="Do not actually create/update")] = False,
