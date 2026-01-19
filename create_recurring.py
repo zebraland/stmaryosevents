@@ -573,7 +573,9 @@ def events_by_day(
             if event.get("weeks", False) and date_info["week_num"] not in event["weeks"]:
                 continue
             # if its a month that we should skip, skip it
-            if event.get("skipmonths", []) and int(date_info["monthnum"]) in event.get("skipmonths", []):
+            if event.get("skipmonths", []) and date_info["monthstr"] in event.get("skipmonths", []):
+                # logging.debug("Skip event by month")
+                # logging.debug(event)
                 continue
             edata = format_event(
                 title=event["title"],
