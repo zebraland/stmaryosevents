@@ -7,15 +7,17 @@ will create multiple instances of the event.
 """
 
 import base64
+import html
 import logging
 import os
+import re
 import sys
 import time
+import unicodedata
 from typing import Annotated
 
 import pendulum
 import requests
-import rich
 import typer
 import yaml
 from dotenv import load_dotenv
@@ -147,7 +149,7 @@ def create_wordpress_event(
         response_json = response.json()
         console.print(f"Event Title: {response_json['title']}")
         console.print(f"Event URL: {response_json['url']}")
-        logging.debug(f"\n{rich.print_json(response_json, indent=2)}")
+        logging.debug(response_json)
         EVENTCACHE[data["slug"]] = response_json["id"]
     else:
         console.print(f"URL of API: {api_url}")
@@ -245,6 +247,9 @@ def format_title(date_info: dict, title: str, include_date: bool = False) -> str
 def build_slug(date_info: dict, title: str) -> str:
     """Build the slug for the event.
 
+    This function will remove characters from the slug that cannot appear, for
+    example HTML encoded entities or brackets and so on
+
     Args:
         date_info: Dict from decode_date with information about the date
         title: The title text to include
@@ -253,11 +258,21 @@ def build_slug(date_info: dict, title: str) -> str:
         The constructing string slug
     """
     slug = f"{date_info['yearstr']}-{date_info['monthnum']}-{date_info['datenum']}-{(title.lower()).replace(' ', '-')}"
-    slug = f"{slug}".replace("---", "-")
-    slug = f"{slug}".replace("(", "")
-    slug = f"{slug}".replace(")", "")
-    slug = f"{slug}".replace("&eacute;", "e")
-    slug = f"{slug}".replace("'", "")
+    logging.debug(f"Initial slug:\t{slug}")
+
+    # build unicode version of slug with HTML stripped
+    slug = html.unescape(slug)
+    # Normalize Unicode to decompose combined characters (e.g., é -> e + ´)
+    # NFD (Normalization Form Decomposition) separates the character from its accent
+    slug = unicodedata.normalize("NFD", slug)
+    # now strip out the non mark spaces (the accents)
+    slug = "".join(c for c in slug if unicodedata.category(c) != "Mn")
+
+    # now remove any left over unwanted characters
+    slug = slug.translate(str.maketrans("", "", "()&$'[]{}"))
+    slug = re.sub(r"\-+", "-", slug)
+    slug = slug.strip("-")
+    logging.debug(f"Final slug:\t{slug}")
     return slug
 
 
@@ -324,6 +339,8 @@ def format_event(
     if image:
         data["image"] = str(image)
 
+    logging.debug("Formatted event:")
+    logging.debug(data)
     return data
 
 
@@ -522,12 +539,9 @@ def events_by_day(
     # Maps 'Saturday' -> 5 (0-indexed in Pendulum 3 WeekDay Enum)
     daynum = pendulum.WeekDay[day.upper()].value
     logging.debug(f"Day: {day} maps to {daynum}")
-    if api_url is None:
-        api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/events"
-    if headers is None:
-        headers = wordpress_header
-    if limit is None:
-        limit = []
+    api_url = api_url or f"{WORDPRESS_SERVER}{EVENT_API_BASE}/events"
+    headers = headers or wordpress_header
+    limit = limit or []
 
     nextweekdate = get_next_week_by_day(startdate=startdate, day=daynum)
     dates_for_day = get_dates_for_n_weeks(startdate=nextweekdate, weekcount=weekcount)
@@ -540,8 +554,8 @@ def events_by_day(
         # gather some useful data about the date
         date_info = decode_date(date=date)
 
-        for id, event in filtered_events.items():
-            if limit and id not in limit:
+        for event_id, event in filtered_events.items():
+            if limit and event_id not in limit:
                 continue
             # for this date, only if the week matches the date's week number
             # if weeks is not present or Null, then it is every week
