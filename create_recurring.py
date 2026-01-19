@@ -154,9 +154,7 @@ def get_dates_for_n_weeks(startdate, weekcount):
     # start with the first date
     dates = [startdate]
     for i in range(1, weekcount):
-        dates.append(
-            (datetime.datetime.strptime(startdate, "%Y-%m-%d") + datetime.timedelta(days=7 * i)).strftime("%Y-%m-%d")
-        )
+        dates.append(pendulum.parse(startdate).add(weeks=i).to_date_string())
     return dates
 
 
