@@ -15,6 +15,7 @@ dependencies = [
   "PyYAML",
   "requests",
   "rich",
+  "typer",
 ]
 
 [project.optional-dependencies]

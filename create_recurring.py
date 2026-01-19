@@ -6,17 +6,17 @@ Events that are created a not recurring (which requires paid plugin), but
 will create multiple instances of the event.
 """
 
-import argparse
 import base64
 import logging
 import os
 import sys
 import time
-from collections.abc import Callable
+from typing import Annotated
 
 import pendulum
 import requests
 import rich
+import typer
 import yaml
 from dotenv import load_dotenv
 from requests.exceptions import HTTPError
@@ -54,6 +54,7 @@ events = configdata["events"]
 MAXPAGES = 50
 
 console = Console()
+cli = typer.Typer(rich_markup_mode="rich")
 
 
 def setup_logging(verbose: bool) -> None:
@@ -66,7 +67,8 @@ def setup_logging(verbose: bool) -> None:
         format="%(message)s",  # Rich handles the timestamp and level formatting
         # show_time - should the time stamp be shown?
         # show_level - should the log level be shown?
-        handlers=[RichHandler(rich_tracebacks=True, markup=True, show_time=False, show_level=False)],
+        # show_path - should the script and line number be included?
+        handlers=[RichHandler(rich_tracebacks=True, markup=True, show_time=False, show_level=False, show_path=False)],
     )
 
     # Silence noisy third-party libraries
@@ -566,68 +568,65 @@ def events_by_day(
         time.sleep(delay)
 
 
-def comma_separated_choices(choices: list[str]) -> Callable[[str], list[str]]:
-    """Argparse helper function for comma separated choices.
+def validate_days(value: list[str]) -> list[str]:
+    """Split comma-separated days and validate them.
 
     Args:
-        choices: List of valid choices that can be picked
+        value: Comma seaprated listed of days
     """
-
-    def check_types(arg: str) -> list[str]:
-        # 1. Split the string by commas
-        items = [item.strip() for item in arg.split(",")]
-
-        # 2. Validate each item against the allowed choices
-        for item in items:
-            if item not in choices:
-                raise argparse.ArgumentTypeError(f"'{item}' is not a valid choice. Choose from: {', '.join(choices)}")
-        return items
-
-    return check_types
-
-
-def main() -> None:
-    """The main function of the code."""
-    parser = argparse.ArgumentParser(description="Create multiple WP Events Calendar events")
+    # Your existing logic using Pendulum 3
     DAYS_OF_WEEK = [day.name.capitalize() for day in pendulum.WeekDay]
-    parser.add_argument(
-        "--days",
-        type=comma_separated_choices(DAYS_OF_WEEK),
-        help=f"Comma-separated list of days (e.g., {','.join(DAYS_OF_WEEK)})",
-        required=True,
-    )
-    parser.add_argument("--dryrun", help="Do not create the actual event", action="store_true")
-    parser.add_argument("--update", help="Update existing events if found", action="store_true")
-    parser.add_argument(
-        "--weeks", help="Number of weeks to create", type=int, metavar="{1-52}", choices=range(1, 53), default=12
-    )
-    parser.add_argument(
-        "--startdate",
-        help="Date after which to start events: yyyy-mm-dd, defaults to today",
-        type=str,
-        default=pendulum.now().strftime("%Y-%m-%d"),
-    )
-    parser.add_argument("--limit", help="Comma separated list of event shortnames to limit to", type=str, default="")
-    parser.add_argument("-v", "--verbose", "--debug", action="store_true", help="Show debug messages")
-    args = parser.parse_args()
+    items = [item.strip() for item in value.split(",")]
+    for item in items:
+        if item not in DAYS_OF_WEEK:
+            # Typer-specific error reporting
+            raise typer.BadParameter(f"'{item}' is not a valid day. Valid choices are: {', '.join(DAYS_OF_WEEK)}")
+    return items
 
-    setup_logging(verbose=args.verbose)
 
-    limit = args.limit.split(",") if args.limit else []
-    cache_events(startdate=args.startdate, weekcount=args.weeks)
-    for day in args.days:
+def break_limit(value: str) -> list[str]:
+    """Split comma-separated limit items.
+
+    Args:
+        value: Comma seaprated listed of limit flags
+    """
+    if not value:
+        return []
+    return [item.strip() for item in value.split(",")]
+
+
+@cli.command()
+def main(
+    days: Annotated[
+        str,
+        typer.Option("--days", callback=validate_days, help="Comma-separated list of days (e.g., Monday,Saturday)"),
+    ],
+    limit: Annotated[
+        str,
+        typer.Option(callback=break_limit, help="Comma-separated list of keys from events file to limit to"),
+    ] = None,
+    weeks: Annotated[int, typer.Option(min=1, max=52)] = 12,
+    startdate: Annotated[str, typer.Option()] = pendulum.now().to_date_string(),
+    update: Annotated[bool, typer.Option(help="Update existing events if found")] = False,
+    verbose: Annotated[bool, typer.Option("--verbose", "--debug")] = False,
+    dryrun: Annotated[bool, typer.Option(help="Do not actually create/update")] = False,
+) -> int:
+    """The main function of the code."""
+    setup_logging(verbose)
+    cache_events(startdate=startdate, weekcount=weeks)
+    for day in days:
         events_by_day(
             api_url=f"{WORDPRESS_SERVER}{EVENT_API_BASE}/events",
             headers=wordpress_header,
-            startdate=args.startdate,
-            weekcount=args.weeks,
-            dryrun=args.dryrun,
-            update=args.update,
+            startdate=startdate,
+            weekcount=weeks,
+            dryrun=dryrun,
+            update=update,
             limit=limit,
             day=day,
         )
+    return 0
 
 
 if __name__ == "__main__":
-    main()
-    sys.exit(0)
+    sys.exit(cli())

@@ -3,3 +3,4 @@ pendulum
 PyYAML
 requests
 rich
+typer
