@@ -2,3 +2,6 @@
 .env
 *.old
 *.egg-info
+__pycache__/
+build/
+uv.lock

@@ -106,7 +106,7 @@ events:
     days:
       - 1
     weeks:
-    disabled: False
+    disabled: True
     desc: >
           <h1>Tea on a Tuesday</h1>
           <p>All are welcome - held in the Coach House</p>

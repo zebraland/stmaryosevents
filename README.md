@@ -7,9 +7,47 @@ are not really recurring but multiple instances of the event.
 
 Ensure that the required packages are installed for the Python script:
 
+Create a virtual env:
+
 ```shell
-pip install -r requirements.txt
+python -m venv ~/foobar
+source ~/foobar/bin/activate
 ```
+
+Remember to activate the virtualenv each time you are using it.
+
+### Using pip
+
+Install packages and dependencies in editable mode:
+
+```shell
+pip install -e .
+```
+
+If using pip and developing, you need to manually install each item from `dependency-groups` to make the tools
+available.
+
+You can now use the script with:
+
+```shell
+create_recurring
+```
+
+### Using UV
+
+```shell
+pip install uv
+uv sync --editable --active
+uv sync --group lint --editable --active
+```
+
+Note that in this case, uv has not installed the script:
+
+```shell
+./create_recurring.py
+```
+
+### Configuration
 
 Configure the `.env` file (see `.env.example` for syntax) with the Wordpress URL, username and password to use to
 connect to the Wordpress API.

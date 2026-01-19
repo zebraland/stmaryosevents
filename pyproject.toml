@@ -19,12 +19,13 @@ dependencies = [
 ]
 
 [project.scripts]
-wp-events = "create_recurring:cli"
+create_recurring = "create_recurring:cli"
 
 [dependency-groups]
 lint = [
-    "ruff>=0.14.13",
     "deptry>=0.24.0",
+    "ruff>=0.14.13",
+    "pre-commit>=4.5.1",
 ]
 
 [tool.ruff]

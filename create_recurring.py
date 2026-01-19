@@ -144,6 +144,8 @@ def create_wordpress_event(
         data["id"] = int(EVENTCACHE[data["slug"]]["id"])
         api_url = f"{api_url}/{data['id']}"
 
+    logging.debug(api_url)
+
     if not dryrun:
         response = requests.request(method=method, url=api_url, json=data, headers=headers, timeout=10)
         response_json = response.json()
@@ -152,7 +154,7 @@ def create_wordpress_event(
         logging.debug(response_json)
         EVENTCACHE[data["slug"]] = response_json["id"]
     else:
-        console.print(f"URL of API: {api_url}")
+        console.print(f"Would create {data['slug']} at {data['start_date']}")
         logging.debug(data)
 
 
