@@ -608,7 +608,14 @@ def break_limit(value: str) -> list[str]:
     """
     if not value:
         return []
-    return [item.strip() for item in value.split(",")]
+    items = [item.strip() for item in value.split(",")]
+    for item in items:
+        if item not in configdata["events"]:
+            raise typer.BadParameter(
+                f"'{item}' is not a event key. Valid choices are: {', '.join(configdata['events'].keys())}"
+            )
+
+    return items
 
 
 @cli.command()
