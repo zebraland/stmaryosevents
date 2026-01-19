@@ -10,7 +10,6 @@ will create multiple instances of the event.
 import argparse
 import base64
 import calendar
-import datetime
 import logging
 import os
 import pprint
@@ -190,30 +189,6 @@ def decode_date(date):
 
     logging.debug(f"{date_info}")
     return date_info
-
-
-def find_date_week(date):
-    """Find the week number a date is in.
-
-    Args:
-        date(str): ISO formatted date string
-    """
-    # get the list of weeks which for the month
-    weeks = calendar.monthcalendar(
-        int(datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%Y")),
-        int(datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%m")),
-    )
-
-    date_num = int(datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%d"))
-    # lookup the day index from the day name for the week
-    day_idx = list(calendar.day_name).index(datetime.datetime.strptime(date, "%Y-%m-%d").strftime("%A"))
-
-    # loop over the weeks and if the date is in the index for the day of the week, we know the week number
-    for index, week in enumerate(weeks):
-        if week[day_idx] == date_num:
-            return index + 1
-
-    return None
 
 
 def format_title(date_info, title, include_date=False):
