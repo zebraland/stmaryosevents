@@ -4,211 +4,82 @@
 # for weeks, occurance N in month:
 # First=1, Second=2
 events:
-# Sunday
-  sundaymorning:
+# Weekdays
+  morningprayer:
     days:
-      - 6
-    weeks:
-    disabled: False
-    desc: "<p>Parish Holy Communion Service from the Book of Common Worship.</p>"
-    title: "Parish Communion (morning)"
-    starttime: "10:00:00"
-    endtime: "11:15:00"
-    tags:
-      - communion
-      - bcp
-      - service
-      - morning
-      - worship
-      - hymns
-      - organ
-    categories:
-      - communion
-      - worship
-    image: 963
-  evensong:
-    days:
-      - 6
-    weeks:
       - 1
-      - 4
-    disabled: False
-    desc: "<p>Evening service of Evensong</p>"
-    title: "A service of Evensong (evening)"
-    starttime: "18:30:00"
-    endtime: "19:45:00"
-    tags:
-      - bcp
-      - evensong
-      - evening
-      - service
-      - worship
-    categories:
-      - worship
-      - evensong
-    image: 1010
-  taize:
-    days:
-      - 6
-    weeks:
+      - 2
       - 3
+      - 4
     disabled: False
     desc: >
-          <h1>A Taiz&eacute; or Iona Celtic worship service</h1>
-          <p>A Taiz&eacute; or Iona Celtic worship service involves sung and chanted prayers, meditations, a period of
-          silence, liturgical readings, and icons.</p>
-    excerpt: >
-             <p>A Taiz&eacute; or Iona Celtic worship service involves sung and chanted prayers, meditations, a period
-             of silence, liturgical readings, and icons.</p>
-    title: "Taiz&eacute; or Iona Celtic Service (evening)"
-    starttime: "18:30:00"
-    endtime: "19:30:00"
+          <h1>Morning Prayer</h1>
+          <p>A said service of Morning Prayer.</p>
+    excerpt: "<p>A said service of Morning Prayer.</p>"
+    title: "Morning Prayer"
+    starttime: "09:00:00"
+    endtime: "09:30:00"
     tags:
-      - evening
-      - service
       - worship
-      - taize
-      - iona
-      - chanting
+      - service
+      - prayer
     categories:
       - worship
-    image: 1148
-  choralevensong:
+  eveningprayersummer:
     days:
-      - 6
-    weeks:
-      - 2
-    disabled: False
-    desc: "<p>Evening service of Choral Evensong</p>"
-    title: "A service of Choral Evensong (evening)"
-    starttime: "18:30:00"
-    endtime: "19:45:00"
-    skipmonths:
-      - 8
-    tags:
-      - bcp
-      - evensong
-      - evening
-      - service
-      - choir
-      - choralevensong
-      - worship
-      - hymns
-      - organ
-    categories:
-      - worship
-      - choralevensong
-      - evensong
-    image: 1010
-  evensongsummer:
-    days:
-      - 6
-    weeks:
       - 1
       - 2
       - 3
       - 4
-      - 5
     disabled: False
-    desc: "<p>Evening service of Evensong</p>"
-    title: "A service of Evensong (evening)"
-    starttime: "18:30:00"
-    endtime: "19:45:00"
+    desc: >
+          <h1>Evening Prayer</h1>
+          <p>A said service of Evening Prayer.</p>
+    excerpt: "<p>A said service of Evening Prayer.</p>"
+    title: "Evening Prayer"
+    starttime: "17:00:00"
+    endtime: "17:30:00"
     skipmonths:
       - 1
       - 2
+      - 11
+      - 12
+    tags:
+      - worship
+      - service
+      - prayer
+    categories:
+      - worship
+  eveningprayerwinter:
+    days:
+      - 1
+      - 2
+      - 3
+      - 4
+    disabled: False
+    desc: >
+          <h1>Evening Prayer</h1>
+          <p>A said service of Evening Prayer.</p>
+    excerpt: "<p>A said service of Evening Prayer.</p>"
+    title: "Evening Prayer"
+    starttime: "16:00:00"
+    endtime: "16:30:00"
+    skipmonths:
       - 3
       - 4
       - 5
       - 6
       - 7
+      - 8
       - 9
       - 10
-      - 11
-      - 12
     tags:
-      - bcp
-      - evensong
-      - evening
+      - worship
       - service
-      - worship
+      - prayer
     categories:
       - worship
-      - evensong
-    image: 1010
-  4oclock:
-    days:
-      - 6
-    weeks:
-      - 1
-    disabled: False
-    desc: >
-          <h1>4 O&#8217;clock Church</h1>
-          <p><img decoding="async" class="aligncenter wp-image-957 size-full"
-          src="/wp-content/uploads/2026/01/4oclock-e1768496522387.jpg" alt="" width="1067" height="1453"
-          srcset="/wp-content/uploads/2026/01/4oclock-e1768496522387.jpg 1067w,
-          /wp-content/uploads/2026/01/4oclock-e1768496522387-220x300.jpg 220w,
-          /wp-content/uploads/2026/01/4oclock-e1768496522387-752x1024.jpg 752w,
-          /wp-content/uploads/2026/01/4oclock-e1768496522387-768x1046.jpg 768w,
-          /wp-content/uploads/2026/01/4oclock-e1768496522387-1024x1394.jpg 1024w,
-          /wp-content/uploads/2026/01/4oclock-e1768496522387-793x1080.jpg 793w" sizes="(max-width: 1067px)
-          100vw, 1067px" /></p>
-          <p>Our 4 O&#8217;clock Church is one of our family focused groups that takes place on the first
-          Sunday of the month during school term time. Its lots of fun an features a mix of different themes
-          with crafts and activities as well as some lovely food and drink!</p>
-    excerpt: "<p>4 O'Clock Church is a family service with different themes, crafts and activities.</p>"
-    title: "4 O'clock Church - Family Service (afternoon)"
-    starttime: "16:00:00"
-    endtime: "17:00:00"
-    skipmonths:
-      - 8
-    tags:
-      - family
-      - 4oclock
-      - afternoon
-      - music
-      - singing
-      - refreshments
-      - freshexpression
-    categories:
-      - family
-    image: 965
-  singingangels:
-    days:
-      - 6
-    weeks:
-      - 2
-    disabled: False
-    desc: >
-          <h1>Singing Angels</h1>
-          <p><img decoding="async" class="aligncenter wp-image-958 size-full"
-          src="https://www.stmaryos.org.uk/wp-content/uploads/2026/01/singingangels-e1768496539880.jpg"
-          alt="" width="1080" height="1440"
-          srcset="https://www.stmaryos.org.uk/wp-content/uploads/2026/01/singingangels-e1768496539880.jpg 1080w,
-          https://www.stmaryos.org.uk/wp-content/uploads/2026/01/singingangels-e1768496539880-225x300.jpg 225w,
-          https://www.stmaryos.org.uk/wp-content/uploads/2026/01/singingangels-e1768496539880-768x1024.jpg 768w,
-          https://www.stmaryos.org.uk/wp-content/uploads/2026/01/singingangels-e1768496539880-1024x1365.jpg 1024w,
-          https://www.stmaryos.org.uk/wp-content/uploads/2026/01/singingangels-e1768496539880-810x1080.jpg 810w"
-          sizes="(max-width: 1080px) 100vw, 1080px" /></p>
-          <p>A multigenerational group for children and adults who love to sing.</p>
-          <p>A fun session on the second Sunday of each much including refreshments at no cost.</p>
-    excerpt: "<p>Bringing FUN &amp; HAPPINESS through SINGING!</p>"
-    title: "Singing Angels (afternoon)"
-    starttime: "16:00:00"
-    endtime: "17:00:00"
-    skipmonths:
-      - 8
-    tags:
-      - family
-      - singingangels
-      - afternoon
-      - music
-      - singing
-      - refreshments
-      - freshexpression
-    categories:
-      - family
-    image: 1127
+# Monday
 # Monday
   craftandchat:
     days:
@@ -223,8 +94,6 @@ events:
     venue: coach-house
     starttime: "14:00:00"
     endtime: "16:00:00"
-    skipmonths:
-      - 8
     tags:
       - social
       - refreshments
@@ -247,8 +116,6 @@ events:
     venue: coach-house
     starttime: "14:00:00"
     endtime: "16:00:00"
-    skipmonths:
-      - 8
     tags:
       - social
       - refreshments
@@ -257,6 +124,48 @@ events:
       - social
       - teaontuesday
     image: 1179
+# Wednesday
+  morningpraise:
+    days:
+      - 2
+    weeks:
+      - 1
+    disabled: False
+    desc: >
+          <h1>Morning Praise</h1>
+          <p>A short service suitable for all, especially people with additional needs.</p>
+    excerpt: "<p>A short service suitable for all, especially people with additional needs.</p>"
+    title: "Morning Praise"
+    starttime: "10:30:00"
+    endtime: "11:30:00"
+    tags:
+      - service
+      - worship
+      - inclusive
+    categories:
+      - worship
+    image: 1209
+  encountermeditation:
+    days:
+      - 2
+    weeks:
+      - 2
+    disabled: False
+    desc: >
+          <h1>Encounter Meditation</h1>
+    excerpt: "<p>A refelective and meditative time.</p>"
+    title: "Encounter Meditation"
+    starttime: "19:00:00"
+    endtime: "20:00:00"
+    tags:
+      - service
+      - worship
+      - reflection
+      - meditation
+    categories:
+      - worship
+      - meditation
+    image: 1210
 # Thursday
   thursdaycommunion:
     days:
@@ -379,3 +288,229 @@ events:
       - social
       - workwithwardens
     image: 1206
+# Sunday
+  sundaymorning:
+    days:
+      - 6
+    weeks:
+    disabled: False
+    desc: "<p>Parish Holy Communion Service from the Book of Common Worship.</p>"
+    title: "Parish Communion (morning)"
+    starttime: "10:00:00"
+    endtime: "11:15:00"
+    tags:
+      - communion
+      - bcp
+      - service
+      - morning
+      - worship
+      - hymns
+      - organ
+    categories:
+      - communion
+      - worship
+    image: 963
+  choralevensong:
+    days:
+      - 6
+    weeks:
+      - 2
+    disabled: False
+    desc: "<p>Evening service of Choral Evensong</p>"
+    title: "A service of Choral Evensong (evening)"
+    starttime: "18:30:00"
+    endtime: "19:45:00"
+    skipmonths:
+      - 8
+    tags:
+      - bcp
+      - evensong
+      - evening
+      - service
+      - choir
+      - choralevensong
+      - worship
+      - hymns
+      - organ
+    categories:
+      - worship
+      - choralevensong
+      - evensong
+    image: 1010
+  taize:
+    days:
+      - 6
+    weeks:
+      - 3
+    disabled: False
+    desc: >
+          <h1>A Taiz&eacute; or Iona Celtic worship service</h1>
+          <p>A Taiz&eacute; or Iona Celtic worship service involves sung and chanted prayers, meditations, a period of
+          silence, liturgical readings, and icons.</p>
+    excerpt: >
+             <p>A Taiz&eacute; or Iona Celtic worship service involves sung and chanted prayers, meditations, a period
+             of silence, liturgical readings, and icons.</p>
+    title: "Taiz&eacute; or Iona Celtic Service (evening)"
+    starttime: "18:30:00"
+    endtime: "19:30:00"
+    tags:
+      - evening
+      - service
+      - worship
+      - taize
+      - iona
+      - chanting
+      - reflection
+    categories:
+      - worship
+    image: 1148
+  evensong:
+    days:
+      - 6
+    weeks:
+      - 4
+    disabled: False
+    desc: "<p>Evening service of Evensong</p>"
+    title: "A service of Evensong (evening)"
+    starttime: "18:30:00"
+    endtime: "19:45:00"
+    tags:
+      - bcp
+      - evensong
+      - evening
+      - service
+      - worship
+    categories:
+      - worship
+      - evensong
+    image: 1010
+  wholenesshealing:
+    days:
+      - 6
+    weeks:
+      - 5
+    disabled: False
+    desc: >
+          <h1>Wholeness &amp; Healing Service</h1>
+          <p>A peaceful time of prayer and reflection with laying-on of hands.</p>
+    excerpt: "<p>A peaceful time of prayer and reflection with laying-on of hands.</p>"
+    title: "Wholeness &amp; Healing Service"
+    starttime: "18:30:00"
+    endtime: "19:30:00"
+    tags:
+      - evening
+      - service
+      - worship
+      - healing
+      - wholeness
+      - prayer
+      - reflection
+    categories:
+      - worship
+      - evensong
+    image: 1010
+  evensongsummer:
+    days:
+      - 6
+    weeks:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+    disabled: True
+    desc: "<p>Evening service of Evensong</p>"
+    title: "A service of Evensong (evening)"
+    starttime: "18:30:00"
+    endtime: "19:45:00"
+    skipmonths:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 9
+      - 10
+      - 11
+      - 12
+    tags:
+      - bcp
+      - evensong
+      - evening
+      - service
+      - worship
+    categories:
+      - worship
+      - evensong
+    image: 1010
+  4oclock:
+    days:
+      - 6
+    weeks:
+      - 1
+    disabled: False
+    desc: >
+          <h1>4 O&#8217;clock Church</h1>
+          <p><img decoding="async" class="aligncenter wp-image-957 size-full"
+          src="/wp-content/uploads/2026/01/4oclock-e1768496522387.jpg" alt="" width="1067" height="1453"
+          srcset="/wp-content/uploads/2026/01/4oclock-e1768496522387.jpg 1067w,
+          /wp-content/uploads/2026/01/4oclock-e1768496522387-220x300.jpg 220w,
+          /wp-content/uploads/2026/01/4oclock-e1768496522387-752x1024.jpg 752w,
+          /wp-content/uploads/2026/01/4oclock-e1768496522387-768x1046.jpg 768w,
+          /wp-content/uploads/2026/01/4oclock-e1768496522387-1024x1394.jpg 1024w,
+          /wp-content/uploads/2026/01/4oclock-e1768496522387-793x1080.jpg 793w" sizes="(max-width: 1067px)
+          100vw, 1067px" /></p>
+          <p>Our 4 O&#8217;clock Church is one of our family focused groups that takes place on the first
+          Sunday of the month during school term time. Its lots of fun an features a mix of different themes
+          with crafts and activities as well as some lovely food and drink!</p>
+    excerpt: "<p>4 O'Clock Church is a family service with different themes, crafts and activities.</p>"
+    title: "4 O'clock Church - Family Service (afternoon)"
+    starttime: "16:00:00"
+    endtime: "17:00:00"
+    tags:
+      - family
+      - 4oclock
+      - afternoon
+      - music
+      - singing
+      - refreshments
+      - freshexpression
+    categories:
+      - family
+    image: 965
+  singingangels:
+    days:
+      - 6
+    weeks:
+      - 3
+    disabled: False
+    desc: >
+          <h1>Singing Angels</h1>
+          <p><img decoding="async" class="aligncenter wp-image-958 size-full"
+          src="https://www.stmaryos.org.uk/wp-content/uploads/2026/01/singingangels-e1768496539880.jpg"
+          alt="" width="1080" height="1440"
+          srcset="https://www.stmaryos.org.uk/wp-content/uploads/2026/01/singingangels-e1768496539880.jpg 1080w,
+          https://www.stmaryos.org.uk/wp-content/uploads/2026/01/singingangels-e1768496539880-225x300.jpg 225w,
+          https://www.stmaryos.org.uk/wp-content/uploads/2026/01/singingangels-e1768496539880-768x1024.jpg 768w,
+          https://www.stmaryos.org.uk/wp-content/uploads/2026/01/singingangels-e1768496539880-1024x1365.jpg 1024w,
+          https://www.stmaryos.org.uk/wp-content/uploads/2026/01/singingangels-e1768496539880-810x1080.jpg 810w"
+          sizes="(max-width: 1080px) 100vw, 1080px" /></p>
+          <p>A multigenerational group for children and adults who love to sing.</p>
+          <p>A fun session on the second Sunday of each much including refreshments at no cost.</p>
+    excerpt: "<p>Bringing FUN &amp; HAPPINESS through SINGING!</p>"
+    title: "Singing Angels (afternoon)"
+    starttime: "16:00:00"
+    endtime: "17:00:00"
+    tags:
+      - family
+      - singingangels
+      - afternoon
+      - music
+      - singing
+      - refreshments
+      - freshexpression
+    categories:
+      - family
+    image: 1127
