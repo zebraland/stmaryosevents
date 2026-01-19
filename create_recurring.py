@@ -610,7 +610,7 @@ def validate_days(value: list[str]) -> list[str]:
 
 
 def validate_date(value: str) -> str:
-    """Validate a date is correct.
+    """Validate a date is correct format.
 
     Args:
         value: ISO formatted date string
