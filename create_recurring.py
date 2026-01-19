@@ -78,19 +78,16 @@ def setup_logging(verbose: bool) -> None:
     logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
-def cache_events(startdate: str, weekcount: int, api_url: bool = None) -> None:
+def cache_events(startdate: str, enddate: str, api_url: bool = None) -> None:
     """Read the current events from wordpress.
 
     Args:
         startdate: ISO formatted date to start from
-        weekcount: Number of weeks to cache
+        enddate: ISO formatted date to end at
         api_url: The URL for the wordpress event API
     """
     if api_url is None:
         api_url = f"{WORDPRESS_SERVER}{EVENT_API_BASE}/events"
-
-    # calculate the end date
-    enddate = pendulum.parse(startdate).add(weeks=int(weekcount)).format("YYYY-MM-DD")
 
     page = 1
     total_pages = 1
@@ -102,7 +99,9 @@ def cache_events(startdate: str, weekcount: int, api_url: bool = None) -> None:
     }
 
     console.print("Caching existing events")
+    logging.debug(f"Lookup from {startdate} to {enddate}")
     while page <= total_pages:
+        logging.debug(f"Current pages: {page}")
         response = requests.get(api_url, params=params)
 
         if response.status_code != requests.codes.ok:
@@ -111,11 +110,15 @@ def cache_events(startdate: str, weekcount: int, api_url: bool = None) -> None:
         data = response.json()
         if page == 1:
             total_pages = data["total_pages"]
+            logging.debug(f"Total pages: {total_pages}")
 
+        logging.debug(f"Events in page: {len(data['events'])}")
         for event in data["events"]:
             EVENTCACHE[event["slug"]] = {"id": event["id"]}
         page += 1
         params["page"] = page
+    logging.debug(f"Found {len(EVENTCACHE.keys())} events in timeframe")
+    logging.debug(EVENTCACHE)
 
 
 def create_wordpress_event(
@@ -158,38 +161,28 @@ def create_wordpress_event(
         logging.debug(data)
 
 
-def get_next_week_by_day(startdate: str, day: str) -> str:
-    """Get the date of the next week by day.
-
-    Args:
-        startdate: ISO formatted date to start lookging for the next instance of day
-        day: The index of the day number (e.g. Sunday = 6)
-
-    Returns:
-        An ISO formatted date of the next day
-    """
-    # either "today" or the startdate
-    base_dt = pendulum.parse(startdate) if startdate else pendulum.now()
-    # find the next day instance after the date
-    next_date = base_dt.next(day).to_date_string()
-    logging.debug(f"With {startdate} the next {day} is {next_date}")
-    return next_date
-
-
-def get_dates_for_n_weeks(startdate: str, weekcount: int) -> list:
+def get_dates_until(startdate: str, enddate: str, daynum: int) -> list:
     """Get the date of the day for the next N weeks.
 
     Args:
         startdate: ISO formatted date to start lookging for the next instance of day
-        weekcount: The number of weeks to look forward to
+        enddate: ISO formatted date to end lookging for the next instance of day
+        daynum: The index of the day number (e.g. Sunday = 6)
 
     Returns:
         A list of dates for the same date for the next N weeks
     """
-    # start with the first date
-    dates = [startdate]
-    for i in range(1, weekcount):
-        dates.append(pendulum.parse(startdate).add(weeks=i).to_date_string())
+    start = pendulum.parse(startdate)
+    end = pendulum.parse(enddate)
+
+    dates = []
+
+    current = start.next(daynum) if start.day_of_week != daynum else start
+    while current <= end:
+        dates.append(current.to_date_string())
+        current = current.add(weeks=1)
+
+    logging.debug(f"Dates for {daynum}: {dates}")
     return dates
 
 
@@ -536,7 +529,7 @@ def events_by_day(
     api_url: str = None,
     headers: dict = None,
     startdate: str = None,
-    weekcount: int = 52,
+    enddate: str = None,
     dryrun: bool = False,
     update: bool = False,
     limit: list[str] = None,
@@ -549,7 +542,7 @@ def events_by_day(
         api_url: The URL for the wordpress event API
         headers: Requests object additional headers to send
         startdate: ISO formatted date to start from
-        weekcount: The number of weeks to work forward through
+        enddate: ISO formatted date to end at
         dryrun: Dry run create or not
         update: Overwrite existing event?
         limit: List of short event names (the index in events config) to limit to
@@ -562,9 +555,7 @@ def events_by_day(
     headers = headers or wordpress_header
     limit = limit or []
 
-    nextweekdate = get_next_week_by_day(startdate=startdate, day=daynum)
-    dates_for_day = get_dates_for_n_weeks(startdate=nextweekdate, weekcount=weekcount)
-    logging.debug(f"dates for {day}: {dates_for_day}")
+    dates_for_day = get_dates_until(startdate=startdate, enddate=enddate, daynum=daynum)
 
     # find the events which are on this day and ignore disabled ones
     filtered_events = {k: v for k, v in events.items() if daynum in v["days"] and (not v.get("disabled", False))}
@@ -646,20 +637,29 @@ def main(
         typer.Option(callback=break_limit, help="Comma-separated list of keys from events file to limit to"),
     ] = None,
     weeks: Annotated[int, typer.Option(min=1, max=52)] = 12,
-    startdate: Annotated[str, typer.Option()] = pendulum.now().to_date_string(),
+    startdate: Annotated[str, typer.Option(help="ISO start date")] = pendulum.now().to_date_string(),
+    enddate: Annotated[str, typer.Option(help="ISO end date (overrides weeks)")] = None,
     update: Annotated[bool, typer.Option(help="Update existing events if found")] = False,
     verbose: Annotated[bool, typer.Option("--verbose", "--debug")] = False,
     dryrun: Annotated[bool, typer.Option(help="Do not actually create/update")] = False,
 ) -> int:
     """The main function of the code."""
     setup_logging(verbose)
-    cache_events(startdate=startdate, weekcount=weeks)
+    start_dt = pendulum.parse(startdate)
+
+    if enddate:
+        final_end_date = pendulum.parse(enddate).to_date_string()
+    else:
+        # Subtract 1 day so '1 week' from Monday is the following Sunday, not the following Monday
+        final_end_date = start_dt.add(weeks=weeks).subtract(days=1).to_date_string()
+
+    cache_events(startdate=startdate, enddate=final_end_date)
     for day in days:
         events_by_day(
             api_url=f"{WORDPRESS_SERVER}{EVENT_API_BASE}/events",
             headers=wordpress_header,
             startdate=startdate,
-            weekcount=weeks,
+            enddate=final_end_date,
             dryrun=dryrun,
             update=update,
             limit=limit,
