@@ -621,13 +621,15 @@ def events_by_day(
         time.sleep(delay)
 
 
-def validate_days(value: list[str]) -> list[str]:
+def validate_days(value: str) -> list[str]:
     """Split comma-separated days and validate them.
 
     Args:
         value: Comma seaprated listed of days
     """
     DAYS_OF_WEEK = [day.name.capitalize() for day in pendulum.WeekDay]
+    if value in {"all", "All", "ALL"}:
+        return DAYS_OF_WEEK
     items = [item.strip() for item in value.split(",")]
     for item in items:
         if item not in DAYS_OF_WEEK:
