@@ -82,7 +82,7 @@ events:
 # Monday
   craftandchat:
     days:
-      - 0
+      - Monday
     weeks:
     disabled: False
     desc: >
