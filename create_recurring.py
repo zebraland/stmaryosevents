@@ -57,6 +57,24 @@ MAXPAGES = 50
 
 console = Console()
 cli = typer.Typer(rich_markup_mode="rich")
+_SESSION = None
+
+
+_SESSION = None
+
+
+def get_session(headers: dict = None) -> requests.Session:
+    """Ensure session is available.
+
+    Args:
+        headers: Requests object additional headers to send
+    """
+    global _SESSION  # noqa: PLW0603
+    if _SESSION is None:
+        _SESSION = requests.Session()
+        _SESSION.headers.update(wordpress_header)
+        logging.debug("New session initialized with Connection Pooling.")
+    return _SESSION
 
 
 def setup_logging(verbose: bool) -> None:
@@ -98,11 +116,13 @@ def cache_events(startdate: str, enddate: str, api_url: bool = None) -> None:
         "page": page,
     }
 
+    s = get_session()
+
     console.print("Caching existing events")
     logging.debug(f"Lookup from {startdate} to {enddate}")
     while page <= total_pages:
         logging.debug(f"Current pages: {page}")
-        response = requests.get(api_url, params=params)
+        response = s.get(api_url, params=params)
 
         if response.status_code != requests.codes.ok:
             raise HTTPError(f"Unexpected error code: {response.status_code} with {response.text}", response=response)
@@ -151,9 +171,10 @@ def create_wordpress_event(
     logging.debug(api_url)
 
     if not dryrun:
-        response = requests.request(method=method, url=api_url, json=data, headers=headers, timeout=10)
+        s = get_session()
+        response = s.request(method=method, url=api_url, json=data, headers=headers, timeout=10)
         response_json = response.json()
-        console.print(f"Event Title (actionstr): {response_json['title']}")
+        console.print(f"Event Title {actionstr}: {response_json['title']}")
         console.print(f"Event URL: {response_json['url']}")
         logging.debug(response_json)
         EVENTCACHE[data["slug"]] = response_json["id"]
@@ -357,9 +378,10 @@ def get_venueid(venue: str = None, api_url: str = None, headers: dict = None) ->
     try:
         return int(VENUEMAP[venue])
     except KeyError:
+        s = get_session()
         if not VENUEMAP:
             console.print("Venuemap is empty, try to populate it")
-            response = requests.get(f"{api_url}", timeout=10)
+            response = s.get(f"{api_url}", timeout=10)
             data = response.json()
             for venuedata in data["venues"]:
                 VENUEMAP[venuedata["slug"]] = venuedata["id"]
@@ -369,7 +391,7 @@ def get_venueid(venue: str = None, api_url: str = None, headers: dict = None) ->
         if venue not in VENUEMAP:
             console.print(f"Lookup venue {venue}")
             slug_api_url = api_url.replace("?", f"/by-slug/{venue}?")
-            response = requests.get(f"{slug_api_url}", timeout=10)
+            response = s.get(f"{slug_api_url}", timeout=10)
             data = response.json()
             if not data:
                 raise ValueError(f"lookup venue {venue} failed") from None
@@ -399,9 +421,10 @@ def get_orgid(organiser: str = None, api_url: str = None, headers: dict = None) 
     try:
         return int(ORGMAP[organiser])
     except KeyError:
+        s = get_session()
         if not ORGMAP:
             console.print("Orgmap is empty, try to populate it")
-            response = requests.get(f"{api_url}", timeout=10)
+            response = s.get(f"{api_url}", timeout=10)
             data = response.json()
             for org in data["organizers"]:
                 ORGMAP[org["slug"]] = org["id"]
@@ -411,7 +434,7 @@ def get_orgid(organiser: str = None, api_url: str = None, headers: dict = None) 
         if organiser not in ORGMAP:
             console.print(f"Lookup organiser {organiser}")
             slug_api_url = api_url.replace("?", f"/by-slug/{organiser}?")
-            response = requests.get(f"{slug_api_url}", timeout=10)
+            response = s.get(f"{slug_api_url}", timeout=10)
             data = response.json()
             if not data:
                 raise ValueError(f"lookup organiser {organiser} failed") from None
@@ -441,11 +464,12 @@ def get_tagid(tag: str, api_url: str = None, headers: dict = None) -> int:
         # fast path - already cached
         return int(TAGMAP[tag])
     except KeyError:
+        s = get_session()
         if not TAGMAP:
             console.print("Tagmap is empty, try to populate it")
             page = 1
             while page < MAXPAGES:
-                response = requests.get(f"{api_url}&per_page=50&page={page}", timeout=10)
+                response = s.get(f"{api_url}&per_page=50&page={page}", timeout=10)
                 data = response.json()
                 if not data:
                     break
@@ -456,7 +480,7 @@ def get_tagid(tag: str, api_url: str = None, headers: dict = None) -> int:
 
         if tag not in TAGMAP:
             console.print(f"Lookup tag {tag}")
-            response = requests.get(f"{api_url}&slug={tag}", timeout=10)
+            response = s.get(f"{api_url}&slug={tag}", timeout=10)
             data = response.json()
             if not data:
                 raise ValueError(f"lookup tag {tag} failed") from None
@@ -484,11 +508,12 @@ def get_catid(cat: str, api_url: str = None, headers: dict = None) -> int:
     try:
         return int(CATMAP[cat])
     except KeyError:
+        s = get_session()
         if not CATMAP:
             console.print("Catmap is empty, try to populate it")
             page = 1
             while page < MAXPAGES:
-                response = requests.get(f"{api_url}&per_page=50&page={page}", timeout=10)
+                response = s.get(f"{api_url}&per_page=50&page={page}", timeout=10)
                 data = response.json()
                 if not data or not data["categories"]:
                     break
@@ -506,7 +531,7 @@ def get_catid(cat: str, api_url: str = None, headers: dict = None) -> int:
                 # you cannot lookup by slug=cat, Events API returns all
                 # so we use search and filter that to find the category
                 # using ?slug=[{cat}]&hide_empty=false might also work
-                response = requests.get(f"{api_url}&search={cat}", timeout=10)
+                response = s.get(f"{api_url}&search={cat}", timeout=10)
                 data = response.json()
                 if not data or not data["categories"]:
                     break
@@ -671,18 +696,20 @@ def main(
         # Subtract 1 day so '1 week' from Monday is the following Sunday, not the following Monday
         final_end_date = start_dt.add(weeks=weeks).subtract(days=1).to_date_string()
 
-    cache_events(startdate=startdate, enddate=final_end_date)
-    for day in days:
-        events_by_day(
-            api_url=f"{WORDPRESS_SERVER}{EVENT_API_BASE}/events",
-            headers=wordpress_header,
-            startdate=startdate,
-            enddate=final_end_date,
-            dryrun=dryrun,
-            update=update,
-            limit=limit,
-            day=day,
-        )
+    with get_session() as session:
+        _SESSION = session
+        cache_events(startdate=startdate, enddate=final_end_date)
+        for day in days:
+            events_by_day(
+                api_url=f"{WORDPRESS_SERVER}{EVENT_API_BASE}/events",
+                headers=wordpress_header,
+                startdate=startdate,
+                enddate=final_end_date,
+                dryrun=dryrun,
+                update=update,
+                limit=limit,
+                day=day,
+            )
     return 0
 
 
