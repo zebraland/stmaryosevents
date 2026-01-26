@@ -1,7 +1,7 @@
 ---
 # for days:
 # Monday=0,Tuesday=1,Wednesday=2,Thursday=3,Friday=4,Saturday=5,Sunday=6
-# for weeks, occurance N in month:
+# for weeks, occurrence N in month:
 # First=1, Second=2
 events:
 # Weekdays
@@ -102,10 +102,32 @@ events:
       - craftandchat
     image: 1193
 # Tuesday
+  monthersunition:
+    days:
+      - Tuesday
+    weeks:
+      - 2
+    disabled: True
+    desc: >
+          <h1>Mother's Union</h1>
+    excerpt:
+    title: "Mother's Union"
+    venue: coach-house
+    starttime: "14:15:00"
+    endtime: "15:15:00"
+    tags:
+      - social
+      - refreshments
+      - teaontuesday
+    categories:
+      - social
+      - teaontuesday
+    image: 1179
   teaontuesday:
     days:
       - Tuesday
     weeks:
+      - 3
     disabled: True
     desc: >
           <h1>Tea on a Tuesday</h1>
@@ -152,7 +174,7 @@ events:
     disabled: False
     desc: >
           <h1>Encounter Meditation</h1>
-    excerpt: "<p>A refelective and meditative time.</p>"
+    excerpt: "<p>A reflective and meditative time.</p>"
     title: "Encounter Meditation"
     starttime: "19:00:00"
     endtime: "20:00:00"

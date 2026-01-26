@@ -26,6 +26,9 @@ lint = [
     "deptry>=0.24.0",
     "ruff>=0.14.13",
     "pre-commit>=4.5.1",
+    "pretty-toml-sort>=0.0.3",
+    "typos>=1.42.1",
+    "validate-pyproject>=0.24.1",
 ]
 
 [tool.ruff]
