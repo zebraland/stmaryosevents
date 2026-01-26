@@ -107,9 +107,9 @@ events:
       - Tuesday
     weeks:
       - 2
-    disabled: True
+    disabled: False
     desc: >
-          <h1>Mother's Union</h1>
+          <h1>Mother&#8217;s Union</h1>
     excerpt:
     title: "Mother's Union"
     venue: coach-house
@@ -118,17 +118,17 @@ events:
     tags:
       - social
       - refreshments
-      - teaontuesday
+      - mothersunion
     categories:
       - social
-      - teaontuesday
-    image: 1179
+      - mothersunion
+    image:
   teaontuesday:
     days:
       - Tuesday
     weeks:
       - 3
-    disabled: True
+    disabled: False
     desc: >
           <h1>Tea on a Tuesday</h1>
           <p>All are welcome - held in the Coach House</p>
